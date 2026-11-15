@@ -1,4 +1,4 @@
-import { CheckCircle, Coffee, Truck } from 'lucide-react';
+import { CheckCircle, Coffee, Truck, X } from 'lucide-react';
 import type { AdminRole, OrderItem } from '../kieu-quan-tri';
 import { money } from '../hang-so-quan-tri';
 
@@ -18,6 +18,15 @@ export function OrdersTab(props: OrdersTabProps) {
     setOrderStatusFilter,
     handleUpdateOrderStatus,
   } = props;
+  const filteredOrders = orders.filter((order) => {
+    if (orderStatusFilter === 'Chờ thanh toán') return order.status === 'PENDING';
+    if (orderStatusFilter === 'Thanh toán lỗi') return order.status === 'PAYMENT_FAILED';
+    if (orderStatusFilter === 'Cần pha chế') return order.status === 'PAID' || order.status === 'PREPARING';
+    if (orderStatusFilter === 'Sẵn sàng nhận') return order.status === 'READY';
+    if (orderStatusFilter === 'Hoàn tất') return order.status === 'COMPLETED';
+    if (orderStatusFilter === 'Đã hủy') return order.status === 'CANCELLED';
+    return true;
+  });
 
   return (
     <div className="tab-orders">
@@ -118,7 +127,7 @@ export function OrdersTab(props: OrdersTabProps) {
         </div>
 
         <div className="stat-card">
-          <div className="stat-label">Đang giao / Chờ nhận</div>
+          <div className="stat-label">Sẵn sàng nhận</div>
           <div className="stat-value" style={{ color: '#0284c7' }}>
             {orders.filter((o) => o.status === 'READY').length}
           </div>
@@ -143,7 +152,7 @@ export function OrdersTab(props: OrdersTabProps) {
         className="history-tabs"
         style={{ display: 'flex', gap: '8px', marginBottom: '16px', flexWrap: 'wrap' }}
       >
-        {(['Tất cả', 'Cần pha chế', 'Đang giao', 'Hoàn tất', 'Đã hủy'] as const).map(
+        {(['Tất cả', 'Chờ thanh toán', 'Thanh toán lỗi', 'Cần pha chế', 'Sẵn sàng nhận', 'Hoàn tất', 'Đã hủy'] as const).map(
           (tab) => (
             <button
               key={tab}
@@ -183,17 +192,7 @@ export function OrdersTab(props: OrdersTabProps) {
             </tr>
           </thead>
           <tbody>
-            {orders
-              .filter((o) => {
-                if (orderStatusFilter === 'Cần pha chế')
-                  return o.status === 'PAID' || o.status === 'PREPARING';
-                if (orderStatusFilter === 'Đang giao') return o.status === 'READY';
-                if (orderStatusFilter === 'Hoàn tất')
-                  return o.status === 'COMPLETED';
-                if (orderStatusFilter === 'Đã hủy') return o.status === 'CANCELLED';
-                return true;
-              })
-              .map((o) => {
+            {filteredOrders.map((o) => {
                 const itemsSummary =
                   o.items && o.items.length > 0
                     ? o.items
@@ -285,39 +284,27 @@ export function OrdersTab(props: OrdersTabProps) {
                           : o.status === 'PREPARING'
                           ? 'Đang pha chế'
                           : o.status === 'READY'
-                          ? 'Đang giao'
+                          ? 'Sẵn sàng nhận'
                           : o.status === 'COMPLETED'
                           ? 'Hoàn tất'
                           : o.status === 'CANCELLED'
                           ? o.payment?.status === 'REFUNDED'
                             ? 'Đã hủy & hoàn tiền'
+                            : o.payment?.status === 'REFUND_PENDING'
+                            ? 'Đã hủy · Chờ hoàn tiền'
                             : 'Đã hủy'
+                          : o.status === 'PAYMENT_FAILED'
+                          ? 'Thanh toán thất bại'
                           : 'Chờ thanh toán'}
                       </span>
                     </td>
                     <td style={{ textAlign: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
                       {o.status === 'PENDING' && (
-                        <button
-                          onClick={() =>
-                            handleUpdateOrderStatus(o.id || o.code, 'PAID')
-                          }
-                          style={{
-                            background: '#dbeafe',
-                            color: '#1d4ed8',
-                            border: '1px solid #bfdbfe',
-                            padding: '5px 12px',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}
-                          title="Xác nhận đã thanh toán và tích điểm"
-                        >
-                          ✅ Xác nhận đã trả
-                        </button>
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>Chờ khách thanh toán</span>
+                      )}
+                      {o.status === 'PAYMENT_FAILED' && (
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>Khách có thể thử lại</span>
                       )}
                       {o.status === 'PAID' && (
                         <button
@@ -399,17 +386,32 @@ export function OrdersTab(props: OrdersTabProps) {
                           ✓ Đã nhận đồ
                         </span>
                       )}
+                      {['PENDING', 'PAYMENT_FAILED', 'PAID'].includes(o.status) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const refundNotice = o.status === 'PAID' ? '\nĐơn đã thanh toán sẽ chờ xử lý hoàn tiền.' : '';
+                            if (window.confirm(`Bạn có chắc muốn hủy đơn ${o.code}?${refundNotice}`)) {
+                              handleUpdateOrderStatus(o.id || o.code, 'CANCELLED');
+                            }
+                          }}
+                          style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 12px', border: '1px solid #fecaca', borderRadius: 6, background: '#fef2f2', color: '#b91c1c', fontSize: 11, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >
+                          <X size={13} /> Hủy đơn
+                        </button>
+                      )}
+                      </div>
                     </td>
                   </tr>
                 );
               })}
-            {orders.length === 0 && (
+            {filteredOrders.length === 0 && (
               <tr>
                 <td
                   colSpan={7}
                   style={{ textAlign: 'center', padding: '30px', color: '#94a3b8' }}
                 >
-                  Chưa có đơn hàng nào trong hệ thống.
+                  {orders.length === 0 ? 'Chưa có đơn hàng nào trong hệ thống.' : 'Không có đơn hàng phù hợp với bộ lọc.'}
                 </td>
               </tr>
             )}

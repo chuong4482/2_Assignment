@@ -2,7 +2,7 @@ const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { randomUUID } = require('node:crypto');
 const { PrismaClient } = require('@prisma/client');
-const { request, customer, orderFor, base } = require('../helpers.cjs');
+const { request, customer, orderFor, base } = require('../tro-giup-kiem-thu.cjs');
 assert.match(process.env.DATABASE_URL || '', /brewlite_assignment1_test(?:\?|$)/);
 const db = new PrismaClient();
 after(() => db.$disconnect());

@@ -1,8 +1,11 @@
 $kind: collection
-description: "Bộ kiểm thử chức năng bám sát 100% sơ đồ luồng nghiệp vụ (Happy Path) trong đề bài: Xem menu -> Chọn sản phẩm -> Đăng nhập -> Thêm vào giỏ hàng -> Xem giỏ & tổng tiền -> Thanh toán không tiền mặt -> Xác nhận đơn (mã đơn) -> Xem lịch sử."
+description: 'Luồng VNPay Sandbox: chạy bước 1–8 để tạo tài khoản test, giỏ, đơn PENDING và payment_url. Runner tự dừng ở bước 8. Mở payment_url trong trình duyệt, hoàn tất Sandbox, giữ nguyên biến rồi gửi riêng bước 9. Không thanh toán Ví/Thẻ mô phỏng; không giả callback; không tự đánh dấu PAID. Folder 10 (hai tài khoản mua ly cuối) là kịch bản riêng, chỉ chạy khi chủ động chọn folder và environment tương ứng.'
 variables:
   base_url: http://localhost:4000
-  product_id: ""
-  user_email: ""
-  jwt_token: ""
-  order_id: ""
+  product_id: ''
+  user_email: ''
+  jwt_token: ''
+  order_id: ''
+  order_total: ''
+  payment_url: ''
+  payment_expires_at: ''

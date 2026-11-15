@@ -1,0 +1,21 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[lop] (u) at (0,0) {\textbf{Người dùng - User}\\\rule{3.9cm}{.3pt}\\id: String\\email: String\\passwordHash: String\\loyaltyPoints: Int};
+\node[lop] (o) at (5.2,0) {\textbf{Đơn hàng - Order}\\\rule{3.9cm}{.3pt}\\id, code: String\\status: OrderStatus\\total: Int\\createdAt: DateTime};
+\node[lop] (p) at (10.4,0) {\textbf{Thanh toán - Payment}\\\rule{3.9cm}{.3pt}\\idempotencyKey: String\\amount: Int\\status, method: String\\transactionRef: String};
+\node[lop] (pr) at (0,-5) {\textbf{Sản phẩm - Product}\\\rule{3.9cm}{.3pt}\\id, name: String\\price: Int\\active: Boolean\\imageUrl: String};
+\node[lop] (oi) at (5.2,-5) {\textbf{Dòng đơn - OrderItem}\\\rule{3.9cm}{.3pt}\\productId: String\\size: String\\qty, unitPrice: Int\\lineTotal: Int};
+\node[lop] (km) at (10.4,-5) {\textbf{Khuyến mãi}\\\textbf{Promotion}\\\rule{3.9cm}{.3pt}\\code: String\\percentOff: Int\\discountAmount: Int\\expiresAt: DateTime};
+\node[lop] (nl) at (0,-10) {\textbf{Nguyên liệu - Ingredient}\\\rule{3.9cm}{.3pt}\\id, name, unit: String\\quantity: Int\\version: Int};
+\node[lop] (ct) at (5.2,-10) {\textbf{Công thức - RecipeItem}\\\rule{3.9cm}{.3pt}\\productId: String\\ingredientId: String\\quantity: Int};
+\node[lop] (diem) at (10.4,-10) {\textbf{LoyaltyTransaction}\\\textit{Giao dịch tích điểm}\\\rule{3.9cm}{.3pt}\\userId: String\\points: Int\\reason: String};
+\draw[mui] (u.east)--node[nhan,above,inner sep=1pt]{1\\0..*}(o.west);
+\draw[mui] (o.east)--node[nhan,above,inner sep=1pt]{1\\0..1}(p.west);
+\draw[{Diamond[fill=muc]}-] (o.south)--node[nhan,right]{1\quad gồm\quad 1..*}(oi.north);
+\draw[mui] (pr.east)--node[nhan,above,inner sep=1pt]{1\\0..*}(oi.west);
+\draw[mui] (km.north)--++(0,.7)-|node[nhan,pos=.7]{0..1 áp dụng cho 0..*}(o.south east);
+\draw[mui] (pr.south)--node[nhan,left]{1}(ct.north west);
+\node[nhan] at (2.8,-8.1) {0..*};
+\draw[mui] (nl.east)--node[nhan,above,inner sep=1pt]{1\\0..*}(ct.west);
+\draw[mui] (u.west)--++(-.5,0)--++(0,-12.2)-|node[nhan,pos=.8]{1 người dùng có 0..* giao dịch điểm}(diem.south);
+\node[hop,text width=13.6cm,align=left,font=\small,anchor=north] at (5.2,-13.5) {\textbf{\guillemotleft enumeration\guillemotright\ OrderStatus}\\PENDING: chờ thanh toán; PAID: đã thanh toán; PREPARING: đang pha chế; READY: sẵn sàng nhận; COMPLETED: hoàn tất; PAYMENT\_FAILED: thanh toán lỗi; CANCELLED: đã hủy.};
+\end{tikzpicture}

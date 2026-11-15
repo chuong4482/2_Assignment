@@ -13,7 +13,7 @@ import { AccessDeniedCard } from '../../features/task-10-quan-tri/thanh-phan/The
 // Tabs
 import { OrdersTab } from '../../features/task-10-quan-tri/cac-tab/TabDonHang';
 import { ProductsTab } from '../../features/task-10-quan-tri/cac-tab/TabSanPham';
-import { InventoryTab } from '../../features/task-10-quan-tri/cac-tab/TabKhoHang';
+import { IngredientsTab } from '../../features/task-10-quan-tri/cac-tab/TabNguyenLieu';
 import { PromotionsTab } from '../../features/task-10-quan-tri/cac-tab/TabKhuyenMai';
 import { CustomersTab } from '../../features/task-10-quan-tri/cac-tab/TabKhachHang';
 import { PermissionsTab } from '../../features/task-10-quan-tri/cac-tab/TabPhanQuyen';
@@ -67,6 +67,11 @@ export default function AdminPage() {
   return (
     <div className="admin-container">
       <AdminStyles />
+      {admin.adminToast && (
+        <div role="status" aria-live="polite" style={{ position: 'fixed', bottom: 24, left: 16, right: 16, margin: '0 auto', maxWidth: 560, padding: '14px 18px', background: '#10352b', color: '#fff', borderRadius: 12, zIndex: 1000, boxShadow: '0 4px 16px rgba(0,0,0,0.16)' }}>
+          {admin.adminToast}
+        </div>
+      )}
 
       <AdminSidebar
         activeTab={admin.activeTab}
@@ -133,7 +138,7 @@ export default function AdminPage() {
                 />
               )}
 
-              {admin.activeTab === 'Kho hàng' && <InventoryTab triggerToast={admin.triggerToast} />}
+              {admin.activeTab === 'Kho hàng' && <IngredientsTab triggerToast={admin.triggerToast} />}
 
               {admin.activeTab === 'Khuyến mãi' && (
                 <PromotionsTab

@@ -3,6 +3,7 @@ import type { CartItem, PromotionItem } from '../../dung-chung/kieu-du-lieu-chun
 import { API } from '../../dung-chung/cau-hinh-api';
 import { displayOrderCode } from '../../dung-chung/ma-don-hang';
 import type { PaymentMethodType } from '../BoChonPhuongThucThanhToan';
+import { rutGonThongBaoNguyenLieu } from '../thong-bao-gio-hang';
 
 export interface ConfirmationResult {
   success: boolean;
@@ -80,7 +81,7 @@ export function useCartCheckout({
     }
 
     if (inventoryError) {
-      alert(`⚠️ ${inventoryError}\nVui lòng giảm bớt số lượng món để có thể tiếp tục thanh toán.`);
+      alert(rutGonThongBaoNguyenLieu(`⚠️ ${inventoryError}\nVui lòng giảm bớt số lượng món để có thể tiếp tục thanh toán.`));
       return;
     }
 
@@ -149,10 +150,10 @@ export function useCartCheckout({
           const err = await orderRes.json().catch(() => ({}));
           if (orderRes.status === 409) {
             const msg = err.message || 'Sản phẩm trong giỏ đã hết hàng hoặc tồn kho vừa thay đổi!';
-            if (setInventoryError) setInventoryError(msg);
-            alert(`⚠️ ${msg}\nVui lòng kiểm tra lại giỏ hàng.`);
+            if (setInventoryError) setInventoryError(rutGonThongBaoNguyenLieu(msg));
+            alert(rutGonThongBaoNguyenLieu(`⚠️ ${msg}\nVui lòng kiểm tra lại giỏ hàng.`));
           } else {
-            alert(`⚠️ ${err.message || 'Không thể tạo đơn hàng, vui lòng thử lại sau.'}`);
+            alert(rutGonThongBaoNguyenLieu(`⚠️ ${err.message || 'Không thể tạo đơn hàng, vui lòng thử lại sau.'}`));
           }
           await loadCartFromDatabase();
           if (validateCartInventory) void validateCartInventory();
@@ -198,7 +199,7 @@ export function useCartCheckout({
       throw new Error('VNPay chưa trả về liên kết thanh toán. Vui lòng thử lại.');
     } catch (err: any) {
       console.error('Lỗi khi thực hiện thanh toán:', err);
-      alert(err?.message || 'Đã xảy ra lỗi kết nối khi đặt hàng. Giỏ hàng của bạn được giữ nguyên.');
+      alert(rutGonThongBaoNguyenLieu(err?.message || 'Đã xảy ra lỗi kết nối khi đặt hàng. Giỏ hàng của bạn được giữ nguyên.'));
     } finally {
       setIsProcessingPayment(false);
       setVnpayStatus('');

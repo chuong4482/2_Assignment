@@ -1,0 +1,12 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[tacvu] (a) at (0,0) {Push / tag};
+\node[tacvu] (b) at (5,0) {Lint, test và build};
+\node[tacvu] (c) at (10,0) {Build image theo SHA};
+\node[tacvu] (d) at (10,-2) {Push GHCR};
+\node[tacvu] (e) at (5,-2) {Deploy; migration an toàn};
+\node[tacvu] (f) at (0,-2) {Smoke test HTTPS};
+\node[tacvu] (g) at (0,-4) {Đạt: ghi release tag};
+\node[tacvu] (h) at (5,-4) {Lỗi: dừng và rollback};
+\draw[mui] (a)--(b);\draw[mui] (b)--(c);\draw[mui] (c)--(d);\draw[mui] (d)--(e);\draw[mui] (e)--(f);
+\draw[mui] (f)--node[nhan,left]{Đạt}(g);\draw[mui] (f.south east)--node[nhan,above]{Thất bại}(h.north west);
+\end{tikzpicture}

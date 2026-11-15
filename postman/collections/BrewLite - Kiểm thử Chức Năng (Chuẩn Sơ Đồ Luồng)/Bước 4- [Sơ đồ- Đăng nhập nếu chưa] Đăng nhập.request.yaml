@@ -1,27 +1,38 @@
 $kind: http-request
-name: "Bước 4: [Sơ đồ: Đăng nhập nếu chưa] Đăng nhập nhận JWT Token (POST /auth/login)"
-url: "{{base_url}}/auth/login"
+name: 'Bước 4: [Xác thực] Đăng nhập nhận JWT (POST /auth/login)'
 method: POST
+url: '{{base_url}}/auth/login'
 headers:
   Content-Type: application/json
 body:
   type: text
   content: |-
     {
-        "email": "{{user_email}}",
-        "password": "MatKhau123!"
+      "email": "{{user_email}}",
+      "password": "MatKhau123!"
     }
 scripts:
+  - type: beforeRequest
+    code: |2
+
+        ["user_email"].forEach(function (key) {
+          if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');
+        });
+    language: text/javascript
   - type: afterResponse
     code: |-
-      pm.test("[4. Đăng nhập] Đăng nhập thành công trả về 200/201", function () {
-          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
-      });
+      (function () {
 
-      pm.test("[4. Đăng nhập] Cấp phát Token JWT hợp lệ", function () {
-          var res = pm.response.json();
-          pm.expect(res).to.have.property('accessToken');
-          pm.collectionVariables.set("jwt_token", res.accessToken);
-      });
+        pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });
+        if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }
+        const data = pm.response.json();
+
+        pm.test('Có JWT và đúng tài khoản', function () {
+          pm.expect(data.accessToken).to.be.a('string').and.not.empty;
+          pm.expect(data.user.email).to.equal(pm.collectionVariables.get('user_email'));
+        });
+        if (!data.accessToken) { pm.execution.setNextRequest(null); return; }
+        pm.collectionVariables.set('jwt_token', data.accessToken);
+      })();
     language: text/javascript
 order: 4000

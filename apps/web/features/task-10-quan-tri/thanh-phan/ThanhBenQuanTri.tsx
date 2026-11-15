@@ -47,6 +47,8 @@ export function AdminSidebar(props: AdminSidebarProps) {
             <button
               key={item.name}
               className={`nav-item ${isActive ? 'active' : ''}`}
+              aria-label={item.name}
+              aria-current={isActive ? 'page' : undefined}
               onClick={() => setActiveTab(item.name)}
               style={{
                 opacity: isAllowed ? 1 : 0.55,

@@ -1,7 +1,7 @@
 $kind: http-request
-name: "Bước 8: [Sơ đồ: Thanh toán không tiền mặt] Xử lý thanh toán Ví điện tử (POST /orders/:id/retry-payment)"
-url: "{{base_url}}/orders/{{order_id}}/retry-payment"
+name: 'Bước 8: [VNPay] Lấy payment_url rồi DỪNG để thanh toán Sandbox'
 method: POST
+url: '{{base_url}}/orders/{{order_id}}/retry-payment'
 headers:
   Content-Type: application/json
   Authorization: Bearer {{jwt_token}}
@@ -9,16 +9,42 @@ body:
   type: text
   content: |-
     {
-        "method": "Ví điện tử"
+      "method": "VNPay"
     }
 scripts:
+  - type: beforeRequest
+    code: |2-
+
+        ["order_id","order_total","jwt_token"].forEach(function (key) {
+          if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');
+        });
+      pm.collectionVariables.set('payment_url','');
+    language: text/javascript
   - type: afterResponse
     code: |-
-      pm.test("[8. Thanh toán] Thanh toán thành công, đơn chuyển trạng thái PAID", function () {
-          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
-          var res = pm.response.json();
-          pm.expect(res.success).to.be.true;
-          pm.expect(res.order.status).to.be.oneOf(['PAID', 'PREPARING']);
-      });
+      (function () {
+
+        pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });
+        if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }
+        const data = pm.response.json();
+
+        let valid = false;
+        pm.test('Có URL VNPay Sandbox cho đúng đơn và số tiền', function () {
+          pm.expect(data.success).to.equal(true);
+          pm.expect(data.order.id).to.equal(pm.collectionVariables.get('order_id'));
+          pm.expect(data.order.total).to.equal(Number(pm.collectionVariables.get('order_total')));
+          pm.expect(data.order.status).to.equal('PENDING');
+          pm.expect(data.paymentUrl).to.be.a('string').and.match(new RegExp('^https://sandbox[.]vnpayment[.]vn/'));
+          pm.expect(data.paymentUrl).to.include('vnp_SecureHash=');
+          valid = true;
+        });
+        if (valid) {
+          pm.collectionVariables.set('payment_url', data.paymentUrl);
+          pm.collectionVariables.set('payment_expires_at', data.order.paymentExpiresAt || '');
+        }
+        // Chỉ tạo liên kết, không tự xác nhận thanh toán và không giả callback.
+        // Runner dừng tại đây: mở payment_url, thanh toán rồi gửi riêng bước 9.
+        pm.execution.setNextRequest(null);
+      })();
     language: text/javascript
 order: 8000

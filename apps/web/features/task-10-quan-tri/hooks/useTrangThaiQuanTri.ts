@@ -604,7 +604,7 @@ export function useAdminState() {
       const activeToken = getActiveAdminToken();
       await loadUsers(activeToken);
 
-      // 1. Fetch Orders from backend API (chỉ lấy các đơn đã thanh toán hoặc đã hủy sau khi thanh toán)
+      // Đồng bộ đầy đủ vòng đời đơn hàng; bộ lọc giao diện chọn trạng thái cần xem.
       let apiOrdersList: OrderItem[] = [];
       let apiFetchedSuccessfully = false;
       if (activeToken) {
@@ -616,15 +616,7 @@ export function useAdminState() {
             apiFetchedSuccessfully = true;
             const data = await res.json();
             if (Array.isArray(data)) {
-              const paidOrders = data.filter((o: any) => {
-                if (o.status === 'PENDING' || o.status === 'PAYMENT_FAILED') return false;
-                if (o.status === 'CANCELLED') {
-                  const pStatus = o.payment?.status;
-                  return pStatus === 'SUCCESS' || pStatus === 'REFUNDED' || pStatus === 'REFUND_PENDING';
-                }
-                return true;
-              });
-              apiOrdersList = paidOrders.map((o: any) => {
+              apiOrdersList = data.map((o: any) => {
                 const custEmail = o.user?.email || '';
                 const custName = o.user?.fullName || '';
                 const displayCust =
@@ -639,7 +631,7 @@ export function useAdminState() {
                     : (o.id.startsWith('#') ? o.id : `#BL${o.id.slice(-6).toUpperCase()}`),
                   customer: displayCust,
                   total: o.total || 0,
-                  status: o.status || 'PAID',
+                  status: o.status || 'PENDING',
                   createdAt: new Date(o.createdAt).toLocaleString('vi-VN', {
                     day: '2-digit',
                     month: '2-digit',
@@ -664,7 +656,7 @@ export function useAdminState() {
         } catch {}
       }
 
-      // 2. Read local orders (chỉ đọc nếu chưa lấy được từ API và lọc bỏ đơn chưa thanh toán)
+      // Chỉ đọc bộ nhớ cục bộ khi chưa lấy được dữ liệu từ API.
       let localOrdersList: OrderItem[] = [];
       if (!apiFetchedSuccessfully) {
         try {
@@ -673,7 +665,6 @@ export function useAdminState() {
             const storedOrders = JSON.parse(storedOrdersRaw);
             if (Array.isArray(storedOrders) && storedOrders.length > 0) {
               localOrdersList = storedOrders
-                .filter((o: any) => o.status !== 'PENDING' && o.status !== 'PAYMENT_FAILED')
                 .map((o: any, idx: number) => {
                   const cEmail = (o.customerEmail || o.customer || o.userEmail || '').trim();
                   const cName = (o.customerName || '').trim();
@@ -693,7 +684,7 @@ export function useAdminState() {
                       : `#BL${String(o.id).slice(-6).toUpperCase()}`,
                     customer: customerLabel,
                     total: o.total || 0,
-                    status: o.status || 'PAID',
+                    status: o.status || 'PENDING',
                     createdAt: o.date || 'Hôm nay',
                     paymentMethod: o.paymentMethod || 'VNPay Sandbox',
                     items: o.items || [],
@@ -1000,7 +991,8 @@ export function useAdminState() {
       PENDING: { text: 'Chờ thanh toán', step: 1 },
       PAID: { text: 'Đã thanh toán', step: 2 },
       PREPARING: { text: 'Đang pha chế', step: 2 },
-      READY: { text: 'Đang giao', step: 3 },
+      READY: { text: 'Sẵn sàng nhận', step: 3 },
+      PAYMENT_FAILED: { text: 'Thanh toán thất bại', step: 1 },
       COMPLETED: { text: 'Hoàn tất', step: 4 },
       CANCELLED: { text: 'Đã hủy', step: 1 },
     };
@@ -1009,8 +1001,13 @@ export function useAdminState() {
     const targetOrder = orders.find((ord) => ord.id === orderIdOrCode || ord.code === orderIdOrCode);
     const apiId = targetOrder?.id || orderIdOrCode;
     const orderDisplayCode = targetOrder?.code || orderIdOrCode;
+    let serverPayment = targetOrder?.payment;
 
     const activeToken = getActiveAdminToken();
+    if (!activeToken) {
+      triggerToast('Vui lòng đăng nhập lại để cập nhật đơn hàng.');
+      return;
+    }
     if (activeToken) {
       try {
         const res = await fetch(`${API}/admin/orders/${encodeURIComponent(apiId)}/status`, {
@@ -1027,8 +1024,11 @@ export function useAdminState() {
           syncDataFromClient();
           return;
         }
+        serverPayment = resData.payment ?? serverPayment;
       } catch (err: any) {
         console.warn('Không thể gửi trạng thái lên API backend:', err);
+        triggerToast('Không thể kết nối máy chủ. Trạng thái đơn hàng chưa được cập nhật.');
+        return;
       }
     }
 
@@ -1037,7 +1037,7 @@ export function useAdminState() {
         ord.id === orderIdOrCode ||
         ord.code === orderIdOrCode ||
         (targetOrder && (ord.id === targetOrder.id || ord.code === targetOrder.code))
-          ? { ...ord, status: newStatus }
+          ? { ...ord, status: newStatus, payment: serverPayment }
           : ord
       )
     );

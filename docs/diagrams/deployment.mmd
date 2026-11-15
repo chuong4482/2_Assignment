@@ -1,21 +1,21 @@
 ﻿flowchart LR
- subgraph Local
- D[Developer] --> L[Local Compose web API database]
+ subgraph Local[Môi trường phát triển]
+ D[Lập trình viên] --> L[Docker Compose: web, API và cơ sở dữ liệu]
  end
- subgraph CI[CI - actual runs pending]
- G[PR lint test build] --> I[SHA-tagged Docker images] --> R[GHCR registry]
+ subgraph CI[CI - chờ minh chứng chạy thực tế]
+ G[Pull request: kiểm tra mã, kiểm thử và biên dịch] --> I[Ảnh Docker gắn mã SHA] --> R[Kho ảnh GHCR]
  end
- subgraph Production[Candidate VPS - actual provider and URLs pending]
- T[HTTPS reverse proxy - config pending] --> W[Next.js loopback 3000]
- T --> A[NestJS loopback 4000]
- A --> B[(Internal PostgreSQL 5432)] --> V[(Persistent volume)]
- S[Environment secrets] -. inject .-> A
- A --> H[Health and readiness]
- A --> O[Stdout logs]
+ subgraph Production[Phương án VPS - chưa xác minh nhà cung cấp và URL]
+ T[Proxy ngược HTTPS - chờ cấu hình] --> W[Next.js nội bộ cổng 3000]
+ T --> A[NestJS nội bộ cổng 4000]
+ A --> B[(PostgreSQL nội bộ cổng 5432)] --> V[(Ổ lưu trữ bền vững)]
+ S[Biến môi trường và thông tin bí mật] -. truyền cấu hình .-> A
+ A --> H[Kiểm tra hoạt động và sẵn sàng]
+ A --> O[Nhật ký đầu ra chuẩn]
  end
- C[Customer browser or PWA] -->|HTTPS| T
- R -->|Immutable pull| W
- R -->|Immutable pull| A
- A -->|HTTPS signed request| P[VNPay Sandbox]
- P -->|HTTPS signed return and IPN| T
- D -->|Push or PR| G
+ C[Trình duyệt hoặc PWA của khách hàng] -->|HTTPS| T
+ R -->|Tải ảnh theo phiên bản cố định| W
+ R -->|Tải ảnh theo phiên bản cố định| A
+ A -->|Yêu cầu HTTPS có chữ ký| P[VNPay thử nghiệm]
+ P -->|Kết quả và IPN qua HTTPS có chữ ký| T
+ D -->|Đẩy mã hoặc tạo pull request| G

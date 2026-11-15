@@ -1,25 +1,30 @@
 $kind: http-request
-name: "Bước 1: [Sơ đồ: Xem menu] Lấy danh sách đồ uống (GET /products)"
-url: "{{base_url}}/products"
+name: 'Bước 1: [Xem menu] Chọn món còn nguyên liệu (GET /products)'
 method: GET
+url: '{{base_url}}/products'
 scripts:
+  - type: beforeRequest
+    code: '[''product_id'',''user_email'',''jwt_token'',''order_id'',''order_total'',''payment_url'',''payment_expires_at''].forEach(function(k){pm.collectionVariables.set(k,'''');});'
+    language: text/javascript
   - type: afterResponse
     code: |-
-      pm.test("[1. Xem menu] Trả về mã HTTP 200 OK", function () {
-          pm.response.to.have.status(200);
-      });
+      (function () {
 
-      pm.test("[1. Xem menu] Danh sách đồ uống hiển thị đầy đủ tên, giá, hình", function () {
-          var products = pm.response.json();
-          pm.expect(products).to.be.an('array');
-          pm.expect(products.length).to.be.above(0);
-          
-          var first = products[0];
-          pm.expect(first).to.have.property('id');
-          pm.expect(first).to.have.property('name');
-          pm.expect(first).to.have.property('price');
-          
-          pm.collectionVariables.set("product_id", first.id);
-      });
+        pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });
+        if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }
+        const data = pm.response.json();
+
+        let selected;
+        pm.test('Thực đơn có món còn nguyên liệu và giá dương', function () {
+          pm.expect(data).to.be.an('array');
+          selected = data.filter(function(p){return p.available === true && Number(p.price) > 0;}).sort(function(a,b){return a.price-b.price;})[0];
+          pm.expect(selected, 'Không có món khả dụng: kiểm tra công thức và nguyên liệu trước khi chạy happy path.').to.be.an('object');
+          pm.expect(selected).to.have.property('id');
+          pm.expect(selected).to.have.property('name');
+          pm.expect(selected).to.have.property('imageUrl');
+        });
+        if (!selected) { pm.execution.setNextRequest(null); return; }
+        pm.collectionVariables.set('product_id', selected.id);
+      })();
     language: text/javascript
 order: 1000

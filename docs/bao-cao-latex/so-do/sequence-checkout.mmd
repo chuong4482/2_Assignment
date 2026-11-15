@@ -1,0 +1,40 @@
+sequenceDiagram
+ actor Customer as Khách hàng
+ participant UI as Giao diện Next.js
+ participant API as API NestJS
+ participant DB as PostgreSQL
+ participant Pay as VNPay thử nghiệm
+ Customer->>UI: Chọn tùy chọn và đặt hàng
+ UI->>API: POST /orders kèm JWT
+ API->>API: Kiểm tra JWT, DTO, tùy chọn và giá
+ API->>DB: Giao dịch tạo đơn PENDING và lưu dữ liệu tại thời điểm đặt
+ DB-->>API: Mã đơn và tổng tiền
+ API-->>UI: Đơn chờ thanh toán
+ alt Luồng đặt hàng hiện tại trên trình duyệt
+ UI->>API: POST /orders/:id/retry-payment kèm JWT
+ else Ứng dụng gọi API với khóa chống xử lý trùng
+ UI->>API: POST /payments kèm JWT và Idempotency-Key
+ API->>DB: Khóa đơn, tạo hoặc dùng lại yêu cầu thanh toán duy nhất
+ DB-->>API: Cùng yêu cầu và URL khi khóa được gửi lại
+ end
+ API->>API: Kiểm tra chủ đơn và ký yêu cầu
+ API-->>UI: URL thanh toán thử nghiệm có chữ ký
+ UI->>Pay: Chuyển trình duyệt và xác thực thanh toán
+ Pay->>API: Kết quả trả về hoặc IPN có chữ ký
+ API->>API: Kiểm tra chữ ký, số tiền và trạng thái
+ alt Thành công
+ API->>DB: Giao dịch kiểm tra trùng và cập nhật tồn kho theo phiên bản
+ API->>DB: Ghi nhận PAID, thanh toán và tích điểm một lần
+ DB-->>API: Xác nhận giao dịch
+ else Thất bại
+ API->>DB: Ghi nhận PAYMENT_FAILED, không trừ tồn kho
+ else Kết quả gửi trùng
+ API->>DB: Đọc thanh toán đã xử lý, không lặp tác động
+ end
+ API-->>Pay: Xác nhận đã nhận kết quả
+ UI->>API: GET /orders/me kèm JWT
+ API->>DB: Lấy lịch sử theo chủ đơn
+ DB-->>API: Trạng thái hiện tại
+ API-->>UI: Kết quả được máy chủ xác nhận
+ UI-->>Customer: Hiển thị xác nhận hoặc cho phép thử lại
+ Note over API,DB: Kiểm thử tích hợp local xác minh sáu yêu cầu đồng thời<br/>cùng khóa dùng lại một thanh toán.

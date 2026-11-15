@@ -1,17 +1,31 @@
 $kind: http-request
-name: "Bước 6: [Sơ đồ: Xem giỏ & tổng tiền] Kiểm tra giỏ hàng (GET /cart)"
-url: "{{base_url}}/cart"
+name: 'Bước 6: [Giỏ hàng] Kiểm tra giỏ và nguyên liệu (GET /cart)'
 method: GET
+url: '{{base_url}}/cart'
 headers:
+  Content-Type: application/json
   Authorization: Bearer {{jwt_token}}
 scripts:
+  - type: beforeRequest
+    code: |2
+
+        ["jwt_token"].forEach(function (key) {
+          if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');
+        });
+    language: text/javascript
   - type: afterResponse
     code: |-
-      pm.test("[6. Xem giỏ] Lấy giỏ hàng thành công & tự tính tổng tiền", function () {
-          pm.response.to.have.status(200);
-          var cart = pm.response.json();
-          pm.expect(cart).to.have.property('items');
-          pm.expect(cart.items.length).to.be.above(0);
-      });
+      (function () {
+
+        pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });
+        if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }
+        const data = pm.response.json();
+
+        pm.test('Giỏ có món và đủ nguyên liệu', function () {
+          pm.expect(data.items).to.be.an('array').and.not.empty;
+          pm.expect(data.isFulfillable, data.inventoryError || 'Giỏ chưa đủ nguyên liệu.').not.to.equal(false);
+        });
+        if (!Array.isArray(data.items) || !data.items.length || data.isFulfillable === false) pm.execution.setNextRequest(null);
+      })();
     language: text/javascript
 order: 6000

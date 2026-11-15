@@ -1,0 +1,30 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\draw[draw=vien,fill=nhat,rounded corners] (-1.8,1.2) rectangle (13.2,-2.4);
+\node[font=\bfseries\small,anchor=north west] at (-1.6,1.1) {LOCAL - ĐÃ KIỂM TRA};
+\node[hop,text width=3.2cm] (dev) at (1,-.8) {\guillemotleft device\guillemotright\\Máy phát triển\\Docker Desktop};
+\node[hop,text width=7cm] (local) at (8,-.8) {\guillemotleft executionEnvironment\guillemotright\\Compose local: web 3000, API 4000\\PostgreSQL nội bộ; publish host 5437};
+\draw[mui] (dev)--(local);
+\draw[draw=vien,rounded corners] (-1.8,-3) rectangle (13.2,-6.5);
+\node[font=\bfseries\small,anchor=north west] at (-1.6,-3.1) {CI - CÓ WORKFLOW, CHƯA CÓ LOG HOSTED};
+\node[hop,text width=4.2cm] (runner) at (1,-4.8) {\guillemotleft executionEnvironment\guillemotright\\GitHub Actions runner\\Lint, test, build};
+\node[hop,text width=4.0cm] (registry) at (8,-4.8) {\guillemotleft artifact repository\guillemotright\\GHCR\\web / API theo SHA};
+\draw[mui] (runner)--node[nhan,above]{Push image}(registry);
+\draw[draw=muc,rounded corners] (-1.8,-7.3) rectangle (13.2,-18.5);
+\node[font=\bfseries\small,anchor=north west] at (-1.6,-7.4) {PRODUCTION - PHƯƠNG ÁN VPS, CHƯA XÁC MINH URL};
+\node[hop,text width=3.1cm] (client) at (1,-9) {\guillemotleft device\guillemotright\\Trình duyệt / PWA};
+\node[hop,text width=4.8cm] (proxy) at (8,-9) {\guillemotleft executionEnvironment\guillemotright\\Reverse proxy HTTPS :443};
+\node[hop,text width=4.0cm] (web) at (2,-11.8) {\guillemotleft executionEnvironment\guillemotright\\Container Next.js :3000};
+\node[hop,text width=4.8cm] (api) at (8,-11.8) {\guillemotleft executionEnvironment\guillemotright\\Container NestJS :4000};
+\node[hop,text width=4.8cm] (db) at (8,-14.7) {\guillemotleft executionEnvironment\guillemotright\\PostgreSQL :5432\\Volume dữ liệu bền vững};
+\node[hop,text width=3.8cm] (secret) at (2,-14.7) {\guillemotleft configuration\guillemotright\\Secret môi trường\\Không nằm trong image};
+\node[hop,text width=11.8cm] (ops) at (5.5,-17.3) {\guillemotleft artifact\guillemotright\\/health, /health/ready; log stdout; migration; smoke test; rollback image};
+\draw[mui] (client)--node[nhan,above]{HTTPS}(proxy);
+\draw[mui] (proxy)--node[nhan,right]{Loopback}(api);
+\draw[mui] (proxy.south west)--(4.7,-10.1)--(2,-10.1)--(web.north);
+\draw[mui] (api)--node[nhan,right]{TCP nội bộ}(db);
+\draw[mui,dashed] (secret)--node[nhan,above]{Inject}(api.south west);
+\draw[mui,dashed] (registry.east)--++(2.6,0)|-node[nhan,pos=.7]{Pull image}(api.east);
+\draw[mui,dashed] (api.south west)--(4.8,-12.6)--(4.8,-16.5)--(ops.north);
+\node[hop,text width=7.5cm] (gateway) at (5,-20.5) {\guillemotleft external service\guillemotright\\VNPay Sandbox - ngoài ranh giới VPS};
+\draw[{Latex[length=2mm]}-{Latex[length=2mm]},draw=muc] (api.east)--(12.6,-11.8)--(12.6,-20.5)--node[nhan,above]{HTTPS\\request / return / IPN}(gateway.east);
+\end{tikzpicture}

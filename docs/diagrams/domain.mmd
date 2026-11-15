@@ -1,59 +1,59 @@
 ﻿classDiagram
- class User {
- String id
- String email
- String passwordHash
- Int loyaltyPoints
+ class User["Người dùng (User)"] {
+ String maNguoiDung
+ String thuDienTu
+ String matKhauDaBam
+ Int diemTichLuy
  }
- class Product {
- String id
- String name
- Int price
- String imageUrl
+ class Product["Sản phẩm (Product)"] {
+ String maSanPham
+ String ten
+ Int gia
+ String duongDanAnh
  }
- class Order {
- String id
- OrderStatus status
- Int total
- DateTime createdAt
+ class Order["Đơn hàng (Order)"] {
+ String maDonHang
+ OrderStatus trangThai
+ Int tongTien
+ DateTime thoiDiemTao
  }
- class OrderItem {
- String size
- Int qty
- Int lineTotal
+ class OrderItem["Chi tiết đơn hàng (OrderItem)"] {
+ String kichCo
+ Int soLuong
+ Int thanhTien
  }
- class Payment {
- String idempotencyKey
- Int amount
- String method
- String transactionRef
+ class Payment["Thanh toán (Payment)"] {
+ String khoaChongXuLyTrung
+ Int soTien
+ String phuongThuc
+ String maThamChieuGiaoDich
  }
- class Promotion {
- String code
- Int percentOff
- Int discountAmount
- DateTime expiresAt
+ class Promotion["Khuyến mãi (Promotion)"] {
+ String maKhuyenMai
+ Int phanTramGiam
+ Int soTienGiam
+ DateTime thoiDiemHetHan
  }
- class LoyaltyTransaction {
- Int points
- String reason
+ class LoyaltyTransaction["Giao dịch tích điểm (LoyaltyTransaction)"] {
+ Int soDiem
+ String lyDo
  }
- class Ingredient {
- Int quantity
- Int version
+ class Ingredient["Nguyên liệu (Ingredient)"] {
+ Int soLuong
+ Int phienBan
  }
- class RecipeItem {
- Int quantity
+ class RecipeItem["Chi tiết công thức (RecipeItem)"] {
+ Int soLuong
  }
- class OrderStatus {
+ class OrderStatus["Trạng thái đơn hàng (OrderStatus)"] {
  <<enumeration>>
- PENDING
- PAID
- PREPARING
- READY
- COMPLETED
- PAYMENT_FAILED
- CANCELLED
+ ChoThanhToan_PENDING
+ DaThanhToan_PAID
+ DangPhaChe_PREPARING
+ SanSang_READY
+ HoanTat_COMPLETED
+ ThanhToanThatBai_PAYMENT_FAILED
+ DaHuy_CANCELLED
  }
  User "1" --> "0..*" Order
  Order "1" *-- "1..*" OrderItem

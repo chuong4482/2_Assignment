@@ -1,7 +1,7 @@
 const http = require('http');
 const apiUrl = new URL(process.env.TEST_API_URL || 'http://localhost:4000');
 
-// Đọc tham số truyền vào từ dòng lệnh: node run_nfr_tests.js [speed | jwt | validation | bcrypt | idempotency | all]
+// Đọc tham số truyền vào từ dòng lệnh: node chay-kiem-thu-phi-chuc-nang.js [speed | jwt | validation | bcrypt | idempotency | all]
 const targetScope = (process.argv[2] || 'all').toLowerCase();
 
 async function request(options, body) {

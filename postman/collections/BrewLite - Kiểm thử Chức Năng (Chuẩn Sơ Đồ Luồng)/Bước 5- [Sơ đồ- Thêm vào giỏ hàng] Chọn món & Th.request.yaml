@@ -1,7 +1,7 @@
 $kind: http-request
-name: "Bước 5: [Sơ đồ: Thêm vào giỏ hàng] Chọn món & Thêm giỏ hàng (POST /cart/items)"
-url: "{{base_url}}/cart/items"
+name: 'Bước 5: [Giỏ hàng] Thêm một ly size M (POST /cart/items)'
 method: POST
+url: '{{base_url}}/cart/items'
 headers:
   Content-Type: application/json
   Authorization: Bearer {{jwt_token}}
@@ -9,16 +9,30 @@ body:
   type: text
   content: |-
     {
-        "productId": "{{product_id}}",
-        "size": "M",
-        "qty": 2,
-        "toppings": []
+      "productId": "{{product_id}}",
+      "size": "M",
+      "qty": 1,
+      "toppings": []
     }
 scripts:
+  - type: beforeRequest
+    code: |2
+
+        ["product_id","jwt_token"].forEach(function (key) {
+          if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');
+        });
+    language: text/javascript
   - type: afterResponse
     code: |-
-      pm.test("[5. Thêm vào giỏ] Thêm sản phẩm vào giỏ hàng thành công", function () {
-          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
-      });
+      (function () {
+
+        pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });
+        if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }
+        const data = pm.response.json();
+
+        pm.test('Thêm món vào giỏ thành công', function () {
+          pm.expect(data.items).to.be.an('array').and.not.empty;
+        });
+      })();
     language: text/javascript
 order: 5000

@@ -1,0 +1,25 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\foreach \x/\id/\ten in {0/C/Khách hàng,3/U/Next.js UI,6/A/NestJS API,9/D/PostgreSQL,12/P/VNPay}{
+\node[hop,text width=2.2cm,minimum height=.8cm] (\id) at (\x,0) {\ten};
+\draw[dashed,draw=vien] (\x,-.45)--(\x,-18);}
+\draw[mui] (12,-1.3)--node[nhan,above]{Return / IPN có chữ ký}(6,-1.3);
+\draw[mui] (6,-2.3)--(7.2,-2.3)--(7.2,-2.8)--node[nhan,below]{Kiểm tra chữ ký, số tiền, trạng thái}(6,-2.8);
+\draw[draw=muc] (4.4,-3.7) rectangle (10.8,-12.8);
+\node[font=\small\bfseries,anchor=north west,fill=white] at (4.45,-3.75) {alt};
+\node[nhan,anchor=north west] at (5.2,-3.8) {[Thành công hợp lệ]};
+\draw[mui] (6,-5)--node[nhan,above]{Transaction; chống trùng;\\kiểm tra phiên bản kho}(9,-5);
+\draw[mui] (6,-6.5)--node[nhan,above]{PAID, thanh toán và điểm\\được cập nhật một lần}(9,-6.5);
+\draw[mui,dashed] (9,-7.7)--node[nhan,above]{Commit}(6,-7.7);
+\draw[dashed,draw=vien] (4.4,-8.3)--(10.8,-8.3);
+\node[nhan,anchor=north west] at (4.6,-8.4) {[Thanh toán thất bại]};
+\draw[mui] (6,-9.6)--node[nhan,above]{PAYMENT\_FAILED;\\không trừ nguyên liệu}(9,-9.6);
+\draw[dashed,draw=vien] (4.4,-10.3)--(10.8,-10.3);
+\node[nhan,anchor=north west] at (4.6,-10.4) {[Callback bị gửi lặp]};
+\draw[mui] (6,-11.7)--node[nhan,above]{Đọc kết quả cũ;\\không lặp tác động}(9,-11.7);
+\draw[mui,dashed] (6,-13.5)--node[nhan,above]{Xác nhận tiếp nhận kết quả}(12,-13.5);
+\draw[mui] (3,-14.6)--node[nhan,above]{GET /orders/me + JWT}(6,-14.6);
+\draw[mui] (6,-15.6)--node[nhan,above]{Đọc đơn của chủ sở hữu}(9,-15.6);
+\draw[mui,dashed] (9,-16.5)--node[nhan,above]{Trạng thái hiện tại}(6,-16.5);
+\draw[mui,dashed] (6,-17.4)--node[nhan,above]{Kết quả từ máy chủ}(3,-17.4);
+\draw[mui,dashed] (3,-18.3)--node[nhan,above]{Xác nhận / thử lại}(0,-18.3);
+\end{tikzpicture}

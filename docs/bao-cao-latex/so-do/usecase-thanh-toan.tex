@@ -1,0 +1,14 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[hop,text width=1.8cm] (khach) at (0,0) {Khách hàng};
+\node[usecase,text width=3cm] (chinh) at (4,0) {UC-01\\Đặt và thanh toán};
+\node[usecase,text width=3cm] (xac) at (10,3) {Xác thực khách hàng};
+\node[usecase,text width=3cm] (kiem) at (10,1.3) {Kiểm tra giỏ và nguyên liệu};
+\node[usecase,text width=3cm] (tao) at (10,-.4) {Tạo đơn chờ trả tiền};
+\node[usecase,text width=3cm] (thanhtoan) at (10,-2.1) {Yêu cầu thanh toán};
+\node[usecase,text width=3cm] (thulai) at (4,-3.1) {Thử lại sau lỗi};
+\node[hop,text width=3cm] (pay) at (10,-4) {VNPay Sandbox};
+\draw (khach)--(chinh);
+\foreach \n in {xac,kiem,tao,thanhtoan}{\draw[mui,dashed] (chinh.east)--node[nhan,sloped,above]{\guillemotleft include\guillemotright} (\n.west);}
+\draw[mui,dashed] (thulai)--node[nhan,right]{\guillemotleft extend\guillemotright} (chinh);
+\draw (thanhtoan)--(pay);
+\end{tikzpicture}

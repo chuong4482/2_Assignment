@@ -1,0 +1,23 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\draw[draw=vien,rounded corners] (1.9,1.3) rectangle (12.6,-12.6);
+\node[font=\bfseries\small,text=muc] at (7.2,0.85) {HỆ THỐNG BREWLITE};
+\node[align=center,font=\small] (khach) at (0,-3.3) {Khách hàng};
+\draw (0,-2.35) circle (0.18);\draw (0,-2.53)--(0,-2.95) (-.35,-2.68)--(.35,-2.68) (0,-2.95)--(-.3,-3.2) (0,-2.95)--(.3,-3.2);
+\node[align=center,font=\small] (nv) at (14,-9) {Nhân viên};
+\draw (14,-8.05) circle (.18);\draw (14,-8.23)--(14,-8.65) (13.65,-8.38)--(14.35,-8.38) (14,-8.65)--(13.7,-8.9) (14,-8.65)--(14.3,-8.9);
+\node[align=center,font=\small] (ql) at (0,-10.1) {Quản lý};
+\draw (0,-9.15) circle (.18);\draw (0,-9.33)--(0,-9.75) (-.35,-9.48)--(.35,-9.48) (0,-9.75)--(-.3,-10) (0,-9.75)--(.3,-10);
+\node[hop,text width=1.9cm] (pay) at (14,-5.2) {VNPay\\thử nghiệm};
+\node[usecase] (menu) at (4.4,-.5) {Xem thực đơn};
+\node[usecase] (ct) at (4.4,-2.2) {Chọn size và topping};
+\node[usecase] (auth) at (4.4,-3.9) {Đăng ký / đăng nhập};
+\node[usecase] (gio) at (4.4,-5.6) {Quản lý giỏ hàng};
+\node[usecase] (dat) at (9.6,-4.8) {UC-01 Đặt và thanh toán};
+\node[usecase] (ls) at (4.4,-7.3) {Theo dõi đơn của mình};
+\node[usecase] (tt) at (9.6,-8.8) {Cập nhật tiến trình pha chế};
+\node[usecase] (huy) at (9.6,-10.6) {Hủy trước pha chế};
+\node[usecase] (kho) at (4.4,-10.6) {Quản lý thực đơn, kho và khuyến mãi};
+\draw (khach.east)--(menu.west);\draw (khach.east)--(ct.west);\draw (khach.east)--(auth.west);\draw (khach.east)--(gio.west);\draw (khach.east)--(ls.west);
+\draw (gio.east)--(dat.west);\draw (pay.west)--(dat.east);
+\draw (nv.west)--(tt.east);\draw (nv.west)--(huy.east);\draw (ql.east)--(kho.west);
+\end{tikzpicture}

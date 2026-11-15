@@ -1,7 +1,7 @@
 const { test, after } = require('node:test');
 const assert = require('node:assert/strict');
 const { PrismaClient } = require('@prisma/client');
-const { request, customer, signedIpn, orderFor } = require('../helpers.cjs');
+const { request, customer, signedIpn, orderFor } = require('../tro-giup-kiem-thu.cjs');
 assert.match(process.env.DATABASE_URL || '', /brewlite_assignment1_test(?:\?|$)/, 'Integration tests require a dedicated brewlite_test database');
 const db = new PrismaClient();
 after(() => db.$disconnect());

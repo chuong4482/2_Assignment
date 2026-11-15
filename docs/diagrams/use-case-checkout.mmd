@@ -1,12 +1,12 @@
 ﻿flowchart LR
- C[Customer] --> P([UC-01 Place and pay])
- P -. includes .-> A([Authenticate customer])
- P -. includes .-> V([Validate cart and availability])
- P -. includes .-> O([Create pending order])
- P -. includes .-> S([Request signed payment])
- S --> G[VNPay Sandbox]
- G --> R([Verify payment result])
- R -. includes .-> D([Settle stock payment and loyalty once])
- R --> T([Show server-confirmed order])
- F([Retry failed payment]) -. extends .-> P
+ C[Khách hàng] --> P([UC-01 Đặt và thanh toán đơn hàng])
+ P -. bao gồm .-> A([Xác thực khách hàng])
+ P -. bao gồm .-> V([Kiểm tra giỏ hàng và khả năng phục vụ])
+ P -. bao gồm .-> O([Tạo đơn chờ thanh toán])
+ P -. bao gồm .-> S([Yêu cầu thanh toán có chữ ký])
+ S --> G[VNPay thử nghiệm]
+ G --> R([Xác minh kết quả thanh toán])
+ R -. bao gồm .-> D([Cập nhật tồn kho, thanh toán và tích điểm một lần])
+ R --> T([Hiển thị đơn được máy chủ xác nhận])
+ F([Thử lại thanh toán thất bại]) -. mở rộng .-> P
  C --> F

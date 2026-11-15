@@ -129,6 +129,26 @@ export function AdminStyles() {
         width: 100%;
       }
 
+      .topbar-actions {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .topbar-role-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: #f8fafc;
+        padding: 5px 12px;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        font-size: 12px;
+        font-weight: 700;
+        color: #475569;
+        white-space: nowrap;
+      }
+
       .topbar-user {
         display: flex;
         align-items: center;
@@ -725,6 +745,48 @@ export function AdminStyles() {
 
       /* RESPONSIVE */
       @media (max-width: 900px) {
+        .admin-topbar {
+          height: auto;
+          min-height: 60px;
+          padding: 12px;
+          gap: 10px;
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .topbar-search {
+          width: 100%;
+          min-width: 0;
+        }
+        .topbar-actions {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+          width: 100%;
+          flex-wrap: wrap;
+        }
+        .topbar-role-badge {
+          font-size: 11px;
+          padding: 4px 8px;
+        }
+        .topbar-user {
+          max-width: 100%;
+          min-width: 0;
+        }
+        .user-info {
+          min-width: 0;
+        }
+        .user-email {
+          overflow-wrap: anywhere;
+        }
+        .page-head-row {
+          align-items: flex-start;
+          flex-direction: column;
+          gap: 12px;
+        }
+        .stat-cards-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
         .product-pagination {
           align-items: flex-start;
           flex-direction: column;
@@ -740,7 +802,7 @@ export function AdminStyles() {
           padding: 12px;
         }
         .stat-cards-grid {
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: repeat(2, minmax(0, 1fr));
         }
         .overview-panels-grid {
           grid-template-columns: 1fr;

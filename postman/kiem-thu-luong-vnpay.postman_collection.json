@@ -1,0 +1,554 @@
+{
+  "info": {
+    "name": "BrewLite — Luồng chức năng VNPay Sandbox (bước 1–9)",
+    "description": "Luồng VNPay Sandbox: chạy bước 1–8 để tạo tài khoản test, giỏ, đơn PENDING và payment_url. Runner tự dừng ở bước 8. Mở payment_url trong trình duyệt, hoàn tất Sandbox, giữ nguyên biến rồi gửi riêng bước 9. Không thanh toán Ví/Thẻ mô phỏng; không giả callback; không tự đánh dấu PAID. Folder 10 (hai tài khoản mua ly cuối) là kịch bản riêng, chỉ chạy khi chủ động chọn folder và environment tương ứng.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_email",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "order_total",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "payment_url",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "payment_expires_at",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Bước 1: [Xem menu] Chọn món còn nguyên liệu (GET /products)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/products",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "['product_id','user_email','jwt_token','order_id','order_total','payment_url','payment_expires_at'].forEach(function(k){pm.collectionVariables.set(k,'');});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "",
+              "  pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "  if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }",
+              "  const data = pm.response.json();",
+              "",
+              "  let selected;",
+              "  pm.test('Thực đơn có món còn nguyên liệu và giá dương', function () {",
+              "    pm.expect(data).to.be.an('array');",
+              "    selected = data.filter(function(p){return p.available === true && Number(p.price) > 0;}).sort(function(a,b){return a.price-b.price;})[0];",
+              "    pm.expect(selected, 'Không có món khả dụng: kiểm tra công thức và nguyên liệu trước khi chạy happy path.').to.be.an('object');",
+              "    pm.expect(selected).to.have.property('id');",
+              "    pm.expect(selected).to.have.property('name');",
+              "    pm.expect(selected).to.have.property('imageUrl');",
+              "  });",
+              "  if (!selected) { pm.execution.setNextRequest(null); return; }",
+              "  pm.collectionVariables.set('product_id', selected.id);",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bước 2: [Chọn món] Xem chi tiết và tùy chọn (GET /products/:id)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/products/{{product_id}}",
+        "header": []
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "",
+              "  [\"product_id\"].forEach(function (key) {",
+              "    if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');",
+              "  });",
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "",
+              "  pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "  if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }",
+              "  const data = pm.response.json();",
+              "",
+              "  pm.test('Đúng món đã chọn, có tên và giá', function () {",
+              "    pm.expect(data.id).to.equal(pm.collectionVariables.get('product_id'));",
+              "    pm.expect(data).to.have.property('name');",
+              "    pm.expect(data.price).to.be.a('number').and.above(0);",
+              "  });",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bước 3: [Xác thực] Đăng ký tài khoản test mới (POST /auth/register)",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/auth/register",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"MatKhau123!\",\n  \"fullName\": \"Khách hàng kiểm thử VNPay\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.collectionVariables.set('user_email','vnpay-test-'+Date.now()+'-'+Math.random().toString(16).slice(2)+'@example.test');",
+              "pm.collectionVariables.set('jwt_token','');",
+              "pm.collectionVariables.set('order_id','');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "",
+              "  pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "  if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }",
+              "  const data = pm.response.json();",
+              "",
+              "  pm.test('Đăng ký đúng tài khoản test', function () {",
+              "    pm.expect(data.user.email).to.equal(pm.collectionVariables.get('user_email'));",
+              "  });",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bước 4: [Xác thực] Đăng nhập nhận JWT (POST /auth/login)",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/auth/login",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{user_email}}\",\n  \"password\": \"MatKhau123!\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "",
+              "  [\"user_email\"].forEach(function (key) {",
+              "    if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');",
+              "  });",
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "",
+              "  pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "  if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }",
+              "  const data = pm.response.json();",
+              "",
+              "  pm.test('Có JWT và đúng tài khoản', function () {",
+              "    pm.expect(data.accessToken).to.be.a('string').and.not.empty;",
+              "    pm.expect(data.user.email).to.equal(pm.collectionVariables.get('user_email'));",
+              "  });",
+              "  if (!data.accessToken) { pm.execution.setNextRequest(null); return; }",
+              "  pm.collectionVariables.set('jwt_token', data.accessToken);",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bước 5: [Giỏ hàng] Thêm một ly size M (POST /cart/items)",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/cart/items",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"productId\": \"{{product_id}}\",\n  \"size\": \"M\",\n  \"qty\": 1,\n  \"toppings\": []\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "",
+              "  [\"product_id\",\"jwt_token\"].forEach(function (key) {",
+              "    if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');",
+              "  });",
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "",
+              "  pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "  if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }",
+              "  const data = pm.response.json();",
+              "",
+              "  pm.test('Thêm món vào giỏ thành công', function () {",
+              "    pm.expect(data.items).to.be.an('array').and.not.empty;",
+              "  });",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bước 6: [Giỏ hàng] Kiểm tra giỏ và nguyên liệu (GET /cart)",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/cart",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "",
+              "  [\"jwt_token\"].forEach(function (key) {",
+              "    if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');",
+              "  });",
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "",
+              "  pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "  if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }",
+              "  const data = pm.response.json();",
+              "",
+              "  pm.test('Giỏ có món và đủ nguyên liệu', function () {",
+              "    pm.expect(data.items).to.be.an('array').and.not.empty;",
+              "    pm.expect(data.isFulfillable, data.inventoryError || 'Giỏ chưa đủ nguyên liệu.').not.to.equal(false);",
+              "  });",
+              "  if (!Array.isArray(data.items) || !data.items.length || data.isFulfillable === false) pm.execution.setNextRequest(null);",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bước 7: [Đặt hàng] Tạo đơn PENDING bằng VNPay (POST /orders)",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/orders",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{product_id}}\",\n      \"size\": \"M\",\n      \"qty\": 1,\n      \"toppings\": []\n    }\n  ],\n  \"paymentMethod\": \"VNPay\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "",
+              "  [\"product_id\",\"jwt_token\"].forEach(function (key) {",
+              "    if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');",
+              "  });",
+              "pm.collectionVariables.set('order_id','');pm.collectionVariables.set('order_total','');pm.collectionVariables.set('payment_url','');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "",
+              "  pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "  if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }",
+              "  const data = pm.response.json();",
+              "",
+              "  pm.test('Tạo đơn chờ thanh toán, chưa báo PAID', function () {",
+              "    pm.expect(data.id).to.be.a('string').and.not.empty;",
+              "    pm.expect(data.status).to.equal('PENDING');",
+              "    pm.expect(data.total).to.be.a('number').and.above(0);",
+              "  });",
+              "  if (!data.id || data.status !== 'PENDING' || !(data.total > 0)) { pm.execution.setNextRequest(null); return; }",
+              "  pm.collectionVariables.set('order_id', data.id);",
+              "  pm.collectionVariables.set('order_total', data.total);",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bước 8: [VNPay] Lấy payment_url rồi DỪNG để thanh toán Sandbox",
+      "request": {
+        "method": "POST",
+        "url": "{{base_url}}/orders/{{order_id}}/retry-payment",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"VNPay\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "",
+              "  [\"order_id\",\"order_total\",\"jwt_token\"].forEach(function (key) {",
+              "    if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');",
+              "  });",
+              "pm.collectionVariables.set('payment_url','');"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "",
+              "  pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "  if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }",
+              "  const data = pm.response.json();",
+              "",
+              "  let valid = false;",
+              "  pm.test('Có URL VNPay Sandbox cho đúng đơn và số tiền', function () {",
+              "    pm.expect(data.success).to.equal(true);",
+              "    pm.expect(data.order.id).to.equal(pm.collectionVariables.get('order_id'));",
+              "    pm.expect(data.order.total).to.equal(Number(pm.collectionVariables.get('order_total')));",
+              "    pm.expect(data.order.status).to.equal('PENDING');",
+              "    pm.expect(data.paymentUrl).to.be.a('string').and.match(new RegExp('^https://sandbox[.]vnpayment[.]vn/'));",
+              "    pm.expect(data.paymentUrl).to.include('vnp_SecureHash=');",
+              "    valid = true;",
+              "  });",
+              "  if (valid) {",
+              "    pm.collectionVariables.set('payment_url', data.paymentUrl);",
+              "    pm.collectionVariables.set('payment_expires_at', data.order.paymentExpiresAt || '');",
+              "  }",
+              "  // Chỉ tạo liên kết, không tự xác nhận thanh toán và không giả callback.",
+              "  // Runner dừng tại đây: mở payment_url, thanh toán rồi gửi riêng bước 9.",
+              "  pm.execution.setNextRequest(null);",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bước 9: [CHẠY RIÊNG SAU VNPAY] Xác minh thanh toán thật từ backend",
+      "request": {
+        "method": "GET",
+        "url": "{{base_url}}/orders/{{order_id}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{jwt_token}}"
+          }
+        ]
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "",
+              "  [\"order_id\",\"order_total\",\"jwt_token\"].forEach(function (key) {",
+              "    if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');",
+              "  });",
+              ""
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "",
+              "  pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+              "  if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }",
+              "  const data = pm.response.json();",
+              "",
+              "  pm.test('Đúng đơn đã được VNPay xác nhận thanh toán thành công', function () {",
+              "    pm.expect(data.id).to.equal(pm.collectionVariables.get('order_id'));",
+              "    pm.expect(data.status, 'Chưa hoàn tất VNPay hoặc callback chưa được xử lý. Mở payment_url và thanh toán Sandbox trước.').to.be.oneOf(['PAID','PREPARING','READY','COMPLETED']);",
+              "    pm.expect(data.payment).to.be.an('object');",
+              "    pm.expect(data.payment.status).to.equal('SUCCESS');",
+              "    pm.expect(data.payment.method).to.equal('VNPay');",
+              "    pm.expect(data.payment.provider).to.equal('VNPAY');",
+              "    pm.expect(data.payment.amount).to.equal(Number(pm.collectionVariables.get('order_total')));",
+              "  });",
+              "})();"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -5,7 +5,7 @@ services:
       POSTGRES_USER: brewlite
       POSTGRES_PASSWORD: brewlite_dev_password
       POSTGRES_DB: brewlite
-    ports: ["${DB_PORT:-5433}:5432"]
+    ports: ["${DB_PORT:-5437}:5432"]
     volumes: [brewlite_db:/var/lib/postgresql/data]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U brewlite -d brewlite"]
@@ -15,8 +15,11 @@ services:
   api:
     build:
       context: .
-      dockerfile: apps/api/Dockerfile
+      dockerfile: Dockerfile
+      target: api
     environment:
+      NODE_ENV: development
+      ALLOW_INSECURE_PASSWORD_RESET: ${ALLOW_INSECURE_PASSWORD_RESET:-false}
       DATABASE_URL: postgresql://brewlite:brewlite_dev_password@db:5432/brewlite?schema=public
       JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-me}
       STAFF_KEY: ${STAFF_KEY:-local-staff-key-change-me}
@@ -34,9 +37,13 @@ services:
   web:
     build:
       context: .
-      dockerfile: apps/web/Dockerfile
+      dockerfile: Dockerfile
+      target: web
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+        NEXT_PUBLIC_ENABLE_LOCAL_DEMO_PASSWORD_RESET: ${NEXT_PUBLIC_ENABLE_LOCAL_DEMO_PASSWORD_RESET:-false}
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
     ports: ["3000:3000"]
     depends_on: [api]
 volumes:

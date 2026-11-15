@@ -19,7 +19,7 @@ const env = {
   TEST_WEB_URL: 'http://localhost:3100',
   PORT: '4100',
 };
-if (!args.length) throw new Error('Usage: node tests/run-with-test-env.cjs <npm arguments>');
+if (!args.length) throw new Error('Usage: node tests/chay-voi-moi-truong-kiem-thu.cjs <npm arguments>');
 // Resolve npm CLI without passing arguments through a shell.
 const npmCli = process.env.npm_execpath || path.join(path.dirname(process.execPath), 'node_modules/npm/bin/npm-cli.js');
 if (!fs.existsSync(npmCli)) throw new Error('npm CLI not found');

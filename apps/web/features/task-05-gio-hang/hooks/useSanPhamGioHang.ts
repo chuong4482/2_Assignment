@@ -3,6 +3,7 @@ import type { CartItem, Product } from '../../dung-chung/kieu-du-lieu-chung';
 import { API } from '../../dung-chung/cau-hinh-api';
 import { normalizeText } from '../../task-03-thuc-don/du-lieu-danh-muc';
 import { useCartContext } from '../NguCanhGioHang';
+import { rutGonThongBaoNguyenLieu } from '../thong-bao-gio-hang';
 
 export interface UseCartItemsProps {
   token: string;
@@ -84,7 +85,7 @@ export function useCartItems({
         if (res.ok) {
           const data = await res.json();
           if (data.isFulfillable === false) {
-            setInventoryError(data.inventoryError || 'Không đủ nguyên liệu');
+            setInventoryError(rutGonThongBaoNguyenLieu(data.inventoryError || 'Không đủ nguyên liệu'));
             return false;
           } else {
             setInventoryError(null);
@@ -105,7 +106,7 @@ export function useCartItems({
     (cartData: any) => {
       if (!cartData) return;
       if (cartData.isFulfillable === false && cartData.inventoryError) {
-        setInventoryError(cartData.inventoryError);
+        setInventoryError(rutGonThongBaoNguyenLieu(cartData.inventoryError));
       } else if (cartData.isFulfillable === true) {
         setInventoryError(null);
       }
@@ -313,7 +314,7 @@ export function useCartItems({
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        const msg = err.message || 'Không thể thêm sản phẩm vào giỏ hàng';
+        const msg = rutGonThongBaoNguyenLieu(err.message || 'Không thể thêm sản phẩm vào giỏ hàng');
         alert(`⚠️ ${msg}`);
         setToastMessage(`⚠️ ${msg}`);
         setTimeout(() => setToastMessage(''), 3000);
@@ -356,7 +357,7 @@ export function useCartItems({
           syncCartFromApi(data);
         } else {
           const err = await res.json().catch(() => ({}));
-          const msg = err.message || 'Không thể cập nhật số lượng';
+          const msg = rutGonThongBaoNguyenLieu(err.message || 'Không thể cập nhật số lượng');
           alert(`⚠️ ${msg}`);
           setToastMessage(`⚠️ ${msg}`);
           setTimeout(() => setToastMessage(''), 3000);

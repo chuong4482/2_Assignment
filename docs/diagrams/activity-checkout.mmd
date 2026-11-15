@@ -1,33 +1,33 @@
 ﻿flowchart TD
- subgraph Customer
- S((Start)) --> M[Browse menu and options] --> C[Review cart]
- C --> L{Logged in?}
- L -->|No| A[Sign in]
- A --> O[Confirm checkout]
- L -->|Yes| O
+ subgraph Customer[Khách hàng]
+ S((Bắt đầu)) --> M[Xem thực đơn và tùy chọn] --> C[Kiểm tra giỏ hàng]
+ C --> L{Đã đăng nhập?}
+ L -->|Không| A[Đăng nhập]
+ A --> O[Xác nhận đặt hàng]
+ L -->|Có| O
  end
- subgraph API
- O --> V[Validate JWT items and price]
- V --> I{In stock?}
- I -->|No| E[Show error]
+ subgraph API[Hệ thống API]
+ O --> V[Kiểm tra JWT, sản phẩm và giá]
+ V --> I{Còn nguyên liệu?}
+ I -->|Không| E[Hiển thị lỗi]
  E --> C
- I -->|Yes| P[Transaction creates PENDING order]
+ I -->|Có| P[Giao dịch tạo đơn chờ thanh toán]
  end
- subgraph VNPay
- P --> U[Signed Sandbox redirect]
- U --> B[Customer authenticates]
- B --> Q[Signed callback]
+ subgraph VNPay[VNPay thử nghiệm]
+ P --> U[Chuyển đến liên kết thử nghiệm có chữ ký]
+ U --> B[Khách hàng xác thực]
+ B --> Q[Trả kết quả có chữ ký]
  end
- subgraph Settlement
- Q --> K{Valid signature and amount?}
- K -->|No| R[Reject without settlement]
- K -->|Yes| F{Payment succeeded?}
- F -->|No| D[PAYMENT_FAILED; retain cart]
- D --> Y{Retry?}
- Y -->|Yes| P
- Y -->|No| Z((End))
- F -->|Yes| W[Transaction inventory CAS payment and loyalty once]
- W --> N[Fetch status and show confirmation]
+ subgraph Settlement[Xử lý kết quả]
+ Q --> K{Chữ ký và số tiền hợp lệ?}
+ K -->|Không| R[Từ chối, không quyết toán]
+ K -->|Có| F{Thanh toán thành công?}
+ F -->|Không| D[Thanh toán thất bại; giữ giỏ hàng]
+ D --> Y{Thử lại?}
+ Y -->|Có| P
+ Y -->|Không| Z((Kết thúc))
+ F -->|Có| W[Giao dịch cập nhật tồn kho theo phiên bản,<br/>thanh toán và tích điểm một lần]
+ W --> N[Lấy trạng thái và hiển thị xác nhận]
  N --> Z
  R --> Z
  end

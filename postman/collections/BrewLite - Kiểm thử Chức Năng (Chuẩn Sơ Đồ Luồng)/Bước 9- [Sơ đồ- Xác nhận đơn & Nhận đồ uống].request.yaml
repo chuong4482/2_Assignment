@@ -1,17 +1,35 @@
 $kind: http-request
-name: "Bước 9: [Sơ đồ: Xác nhận đơn & Nhận đồ uống] Xem đơn hàng theo mã đơn (GET /orders/:id)"
-url: "{{base_url}}/orders/{{order_id}}"
+name: 'Bước 9: [CHẠY RIÊNG SAU VNPAY] Xác minh thanh toán thật từ backend'
 method: GET
+url: '{{base_url}}/orders/{{order_id}}'
 headers:
+  Content-Type: application/json
   Authorization: Bearer {{jwt_token}}
 scripts:
+  - type: beforeRequest
+    code: |2
+
+        ["order_id","order_total","jwt_token"].forEach(function (key) {
+          if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');
+        });
+    language: text/javascript
   - type: afterResponse
     code: |-
-      pm.test("[9. Xác nhận đơn] Hiển thị mã đơn và trạng thái PAID sẵn sàng pha chế", function () {
-          pm.response.to.have.status(200);
-          var order = pm.response.json();
-          pm.expect(order.id).to.eql(pm.collectionVariables.get("order_id"));
-          pm.expect(order.status).to.be.oneOf(['PAID', 'PREPARING']);
-      });
+      (function () {
+
+        pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });
+        if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }
+        const data = pm.response.json();
+
+        pm.test('Đúng đơn đã được VNPay xác nhận thanh toán thành công', function () {
+          pm.expect(data.id).to.equal(pm.collectionVariables.get('order_id'));
+          pm.expect(data.status, 'Chưa hoàn tất VNPay hoặc callback chưa được xử lý. Mở payment_url và thanh toán Sandbox trước.').to.be.oneOf(['PAID','PREPARING','READY','COMPLETED']);
+          pm.expect(data.payment).to.be.an('object');
+          pm.expect(data.payment.status).to.equal('SUCCESS');
+          pm.expect(data.payment.method).to.equal('VNPay');
+          pm.expect(data.payment.provider).to.equal('VNPAY');
+          pm.expect(data.payment.amount).to.equal(Number(pm.collectionVariables.get('order_total')));
+        });
+      })();
     language: text/javascript
 order: 9000

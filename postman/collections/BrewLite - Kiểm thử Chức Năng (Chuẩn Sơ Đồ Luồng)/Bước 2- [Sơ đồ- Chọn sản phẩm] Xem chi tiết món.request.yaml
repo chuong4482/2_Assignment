@@ -1,16 +1,28 @@
 $kind: http-request
-name: "Bước 2: [Sơ đồ: Chọn sản phẩm] Xem chi tiết món & Topping (GET /products/:id)"
-url: "{{base_url}}/products/{{product_id}}"
+name: 'Bước 2: [Chọn món] Xem chi tiết và tùy chọn (GET /products/:id)'
 method: GET
+url: '{{base_url}}/products/{{product_id}}'
 scripts:
+  - type: beforeRequest
+    code: |2
+
+        ["product_id"].forEach(function (key) {
+          if (!pm.collectionVariables.get(key)) throw new Error('Thiếu ' + key + ': chạy các bước trước theo thứ tự.');
+        });
+    language: text/javascript
   - type: afterResponse
     code: |-
-      pm.test("[2. Chọn sản phẩm] Lấy chi tiết món thành công (200 OK)", function () {
-          pm.response.to.have.status(200);
-          var item = pm.response.json();
-          pm.expect(item.id).to.eql(pm.collectionVariables.get("product_id"));
-          pm.expect(item).to.have.property('name');
-          pm.expect(item).to.have.property('price');
-      });
+      (function () {
+
+        pm.test('HTTP thành công', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });
+        if (![200, 201].includes(pm.response.code)) { pm.execution.setNextRequest(null); return; }
+        const data = pm.response.json();
+
+        pm.test('Đúng món đã chọn, có tên và giá', function () {
+          pm.expect(data.id).to.equal(pm.collectionVariables.get('product_id'));
+          pm.expect(data).to.have.property('name');
+          pm.expect(data.price).to.be.a('number').and.above(0);
+        });
+      })();
     language: text/javascript
 order: 2000

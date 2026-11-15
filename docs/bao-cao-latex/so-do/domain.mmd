@@ -1,0 +1,66 @@
+﻿classDiagram
+ class User["Người dùng (User)"] {
+ String maNguoiDung
+ String thuDienTu
+ String matKhauDaBam
+ Int diemTichLuy
+ }
+ class Product["Sản phẩm (Product)"] {
+ String maSanPham
+ String ten
+ Int gia
+ String duongDanAnh
+ }
+ class Order["Đơn hàng (Order)"] {
+ String maDonHang
+ OrderStatus trangThai
+ Int tongTien
+ DateTime thoiDiemTao
+ }
+ class OrderItem["Chi tiết đơn hàng (OrderItem)"] {
+ String kichCo
+ Int soLuong
+ Int thanhTien
+ }
+ class Payment["Thanh toán (Payment)"] {
+ String khoaChongXuLyTrung
+ Int soTien
+ String phuongThuc
+ String maThamChieuGiaoDich
+ }
+ class Promotion["Khuyến mãi (Promotion)"] {
+ String maKhuyenMai
+ Int phanTramGiam
+ Int soTienGiam
+ DateTime thoiDiemHetHan
+ }
+ class LoyaltyTransaction["Giao dịch tích điểm (LoyaltyTransaction)"] {
+ Int soDiem
+ String lyDo
+ }
+ class Ingredient["Nguyên liệu (Ingredient)"] {
+ Int soLuong
+ Int phienBan
+ }
+ class RecipeItem["Chi tiết công thức (RecipeItem)"] {
+ Int soLuong
+ }
+ class OrderStatus["Trạng thái đơn hàng (OrderStatus)"] {
+ <<enumeration>>
+ ChoThanhToan_PENDING
+ DaThanhToan_PAID
+ DangPhaChe_PREPARING
+ SanSang_READY
+ HoanTat_COMPLETED
+ ThanhToanThatBai_PAYMENT_FAILED
+ DaHuy_CANCELLED
+ }
+ User "1" --> "0..*" Order
+ Order "1" *-- "1..*" OrderItem
+ Product "1" --> "0..*" OrderItem
+ Order "1" --> "0..1" Payment
+ Promotion "0..1" --> "0..*" Order
+ User "1" --> "0..*" LoyaltyTransaction
+ Product "1" --> "0..*" RecipeItem
+ Ingredient "1" --> "0..*" RecipeItem
+ Order --> OrderStatus

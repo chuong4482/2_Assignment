@@ -11,3 +11,8 @@ postman
 .postman
 docs
 tests
+tmp
+output
+test-results
+*.doc
+*.docx

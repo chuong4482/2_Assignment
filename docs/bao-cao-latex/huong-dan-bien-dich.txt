@@ -1,0 +1,33 @@
+BÁO CÁO BREWLITE - ASSIGNMENT 2
+
+1. Trên Overleaf
+- Tải toàn bộ gói ZIP lên bằng New Project > Upload Project.
+- Chọn Main document: bao-cao-brewlite.tex.
+- Chọn compiler XeLaTeX rồi Recompile (chạy lại nếu mục lục chưa cập nhật).
+
+2. Trên máy đã có TeX Live/MiKTeX
+Mở terminal ngay trong thư mục chứa bao-cao-brewlite.tex:
+  xelatex -interaction=nonstopmode bao-cao-brewlite.tex
+  xelatex -interaction=nonstopmode bao-cao-brewlite.tex
+Hoặc:
+  tectonic bao-cao-brewlite.tex
+
+3. Chỉnh thông tin
+- Sửa TenNhom, LopHoc và GiangVien ở đầu file .tex.
+- Tên và MSSV sáu thành viên đã điền theo thông tin được cung cấp.
+- Giữ nguyên cách viết “Nuyễn Thanh Quang” theo danh sách nguồn; nhóm kiểm tra lại trước khi nộp.
+- Bảng đóng góp có tổng 100%; nhiệm vụ chi tiết từng thành viên chưa được cung cấp.
+- Tìm chuỗi “Cần bổ sung” để điền các minh chứng thật còn thiếu.
+
+4. Hình và sơ đồ
+- Không đổi vị trí tương đối của thư mục hinh/ và so-do/.
+- Các file so-do/*.tex là sơ đồ TikZ vector của báo cáo.
+- Các file so-do/*.mmd và hình Mermaid tương ứng được giữ để đối chiếu với dự án.
+- Ảnh giao diện lấy từ phiên bản local; thông tin khách đã được thay trên bản chụp quản trị.
+
+5. Lưu ý nội dung trước khi nộp
+- Báo cáo nêu rõ VNPay Sandbox khác Ví/Thẻ mô phỏng trong đề.
+- Chưa có minh chứng production HTTPS, hosted CI, bảo vệ nhánh và lịch sử Sprint thật.
+- Hai tệp bắt buộc docs/traceability-matrix.md và docs/deployment.md đã có trong repository; cần giữ đồng bộ với code và báo cáo.
+- PDF/báo cáo không thay thế minh chứng lịch sử Git, issue/PR, release và video demo.
+- Không bổ sung merchant secret, mật khẩu production hoặc token vào gói báo cáo.

@@ -2,7 +2,7 @@
 # Run on the target Linux VPS, from the directory containing .env.production.
 set -eu
 cd "$(dirname "$0")/.."
-tag=${1:?Usage: sh scripts/deploy.sh IMAGE_TAG}
+tag=${1:?Usage: sh scripts/trien-khai.sh IMAGE_TAG}
 case "$tag" in *[!a-zA-Z0-9._-]*|'') echo 'Invalid image tag' >&2; exit 1;; esac
 export IMAGE_TAG="$tag"
 compose() { docker compose --env-file .env.production -f docker-compose.prod.yml "$@"; }

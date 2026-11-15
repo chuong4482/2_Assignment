@@ -4,38 +4,8 @@
  * Reference: https://sandbox.vnpayment.vn/apis/docs/thanh-toan-pay/pay.html
  */
 import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as path from 'path';
-
-export function taiBienMoiTruong(): void {
-  if (process.env.VNPAY_TMN_CODE && process.env.VNPAY_HASH_SECRET) return;
-  const cacTepTin = [
-    path.join(process.cwd(), '.env'),
-    path.join(process.cwd(), 'apps/api/.env'),
-    path.join(process.cwd(), '../../.env'),
-    path.join(__dirname, '.env'),
-    path.join(__dirname, '../../../../.env'),
-    path.join(__dirname, '../../../../../.env'),
-  ];
-  for (const tepTin of cacTepTin) {
-    if (fs.existsSync(tepTin)) {
-      try {
-        const noiDung = fs.readFileSync(tepTin, 'utf8');
-        for (const dong of noiDung.split(/\r?\n/)) {
-          const khop = dong.match(/^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*?)\s*$/);
-          if (khop && !khop[1].startsWith('#')) {
-            const giaTri = khop[2].replace(/^(['"])(.*)\1$/, '$2').trim();
-            if (!process.env[khop[1]] || process.env[khop[1]] === '') {
-              process.env[khop[1]] = giaTri;
-            }
-          }
-        }
-      } catch {}
-    }
-  }
-}
-
-export const tryLoadEnv = taiBienMoiTruong;
+import { taiBienMoiTruong } from '../../config/moi-truong';
+export { taiBienMoiTruong, taiBienMoiTruong as tryLoadEnv } from '../../config/moi-truong';
 
 export const VNPAY_GATEWAY = 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
 

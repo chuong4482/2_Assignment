@@ -34,13 +34,15 @@ jobs:
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/api/Dockerfile
+          file: Dockerfile
+          target: api
           push: true
           tags: ghcr.io/${{ steps.image.outputs.owner }}/brewlite-api:${{ steps.image.outputs.tag }}
       - uses: docker/build-push-action@v6
         with:
           context: .
-          file: apps/web/Dockerfile
+          file: Dockerfile
+          target: web
           push: true
           tags: ghcr.io/${{ steps.image.outputs.owner }}/brewlite-web:${{ steps.image.outputs.tag }}
           build-args: |
@@ -70,17 +72,17 @@ jobs:
           printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
           ssh "$DEPLOY_USER@$DEPLOY_HOST" 'mkdir -p ~/brewlite/scripts'
           scp docker-compose.prod.yml "$DEPLOY_USER@$DEPLOY_HOST:brewlite/"
-          scp scripts/deploy.sh scripts/rollback.sh "$DEPLOY_USER@$DEPLOY_HOST:brewlite/scripts/"
+          scp scripts/trien-khai.sh scripts/khoi-phuc-phien-ban.sh "$DEPLOY_USER@$DEPLOY_HOST:brewlite/scripts/"
       - name: Deploy, smoke test, rollback on failure
         run: |
           # IMAGE_TAG is a commit SHA intentionally passed from this runner.
           # shellcheck disable=SC2029
-          if ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd ~/brewlite && sh scripts/deploy.sh '$IMAGE_TAG'" &&
+          if ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd ~/brewlite && sh scripts/trien-khai.sh '$IMAGE_TAG'" &&
              curl --fail --retry 10 --retry-delay 3 --retry-all-errors "$PUBLIC_API_URL/health/ready" &&
              curl --fail --retry 5 --retry-delay 3 --retry-all-errors "$PUBLIC_WEB_URL"; then
             echo 'Deployment and smoke tests passed'
           else
-            if ssh "$DEPLOY_USER@$DEPLOY_HOST" 'cd ~/brewlite && sh scripts/rollback.sh'; then
+            if ssh "$DEPLOY_USER@$DEPLOY_HOST" 'cd ~/brewlite && sh scripts/khoi-phuc-phien-ban.sh'; then
               curl --fail --retry 5 --retry-delay 3 --retry-all-errors "$PUBLIC_API_URL/health/ready" || echo 'ROLLBACK HEALTH CHECK FAILED'
             else
               echo 'ROLLBACK FAILED: inspect production before retrying'

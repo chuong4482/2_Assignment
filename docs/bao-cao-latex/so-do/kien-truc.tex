@@ -1,0 +1,9 @@
+\begin{tikzpicture}[x=1cm,y=1cm]
+\node[tacvu,text width=11.8cm] (ui) at (0,0) {\textbf{Lớp trình bày - Next.js/PWA}\\Route, component, giỏ hàng, theo dõi đơn, quản trị};
+\node[tacvu,text width=11.8cm] (api) at (0,-1.7) {\textbf{Lớp API - NestJS}\\Controller, DTO, JWT guard và phân quyền};
+\node[tacvu,text width=11.8cm] (biz) at (0,-3.4) {\textbf{Lớp nghiệp vụ}\\Giỏ hàng, đơn, thanh toán, nguyên liệu, điểm và khuyến mãi};
+\node[tacvu,text width=7.0cm] (data) at (-2.3,-5.3) {\textbf{Prisma / PostgreSQL}\\Transaction, migration, seed};
+\node[tacvu,text width=3.2cm] (pay) at (4.2,-5.3) {\textbf{VNPay Sandbox}\\Dịch vụ bên ngoài};
+\draw[mui] (ui)--node[nhan,right]{HTTP/HTTPS + JWT}(api);
+\draw[mui] (api)--(biz);\draw[mui] (biz)--(data);\draw[mui] (biz)--(pay);
+\end{tikzpicture}

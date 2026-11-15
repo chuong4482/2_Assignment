@@ -37,3 +37,10 @@ playwright-report/
 .release-tag
 .previous-release-tag
 debug.log
+
+# Temporary work, generated artifacts and local Word reports
+tmp/
+output/
+test-results/
+*.doc
+*.docx
