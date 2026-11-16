@@ -1,0 +1,16 @@
+$kind: http-request
+name: "Bước 2: [Sơ đồ: Chọn sản phẩm] Xem chi tiết món & Topping (GET /products/:id)"
+url: "{{base_url}}/products/{{product_id}}"
+method: GET
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("[2. Chọn sản phẩm] Lấy chi tiết món thành công (200 OK)", function () {
+          pm.response.to.have.status(200);
+          var item = pm.response.json();
+          pm.expect(item.id).to.eql(pm.collectionVariables.get("product_id"));
+          pm.expect(item).to.have.property('name');
+          pm.expect(item).to.have.property('price');
+      });
+    language: text/javascript
+order: 2000

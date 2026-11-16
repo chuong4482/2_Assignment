@@ -1,0 +1,12 @@
+﻿flowchart LR
+ C[Customer] --> P([UC-01 Place and pay])
+ P -. includes .-> A([Authenticate customer])
+ P -. includes .-> V([Validate cart and availability])
+ P -. includes .-> O([Create pending order])
+ P -. includes .-> S([Request signed payment])
+ S --> G[VNPay Sandbox]
+ G --> R([Verify payment result])
+ R -. includes .-> D([Settle stock payment and loyalty once])
+ R --> T([Show server-confirmed order])
+ F([Retry failed payment]) -. extends .-> P
+ C --> F

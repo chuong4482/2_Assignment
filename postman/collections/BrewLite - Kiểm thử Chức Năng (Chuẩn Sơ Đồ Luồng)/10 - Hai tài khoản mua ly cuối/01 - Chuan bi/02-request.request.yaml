@@ -1,0 +1,31 @@
+$kind: http-request
+name: 02 — Tạo nguyên liệu test riêng, chỉ đủ 1 ly
+url: '{{baseUrl}}/admin/ingredients'
+method: POST
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{lastAdminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "name": "LAST-CUP-{{lastRunId}}",
+      "unit": "ly",
+      "quantity": 1,
+      "lowStockThreshold": 0,
+      "costPrice": 0
+    }
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 201', function(){pm.response.to.have.status(201);});
+    const data=pm.response.json();
+    pm.test('Tồn kho đúng 1 đơn vị',function(){pm.expect(data.quantity).to.equal(1);});
+    if(pm.response.code===201)pm.environment.set('lastIngredientId',data.id);
+    if(pm.response.code>=400){pm.execution.setNextRequest(null);}
+    })();
+  language: text/javascript
+order: 2000

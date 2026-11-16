@@ -1,0 +1,24 @@
+$kind: http-request
+name: "Bước 5: [Sơ đồ: Thêm vào giỏ hàng] Chọn món & Thêm giỏ hàng (POST /cart/items)"
+url: "{{base_url}}/cart/items"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{jwt_token}}
+body:
+  type: text
+  content: |-
+    {
+        "productId": "{{product_id}}",
+        "size": "M",
+        "qty": 2,
+        "toppings": []
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("[5. Thêm vào giỏ] Thêm sản phẩm vào giỏ hàng thành công", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+    language: text/javascript
+order: 5000

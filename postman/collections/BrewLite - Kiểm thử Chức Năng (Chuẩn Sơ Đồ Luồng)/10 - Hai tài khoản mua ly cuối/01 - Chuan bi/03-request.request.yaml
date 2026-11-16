@@ -1,0 +1,31 @@
+$kind: http-request
+name: 03 — Tạo món test riêng
+url: '{{baseUrl}}/admin/products'
+method: POST
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{lastAdminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "name": "LAST-CUP-{{lastRunId}}",
+      "category": "Postman Test",
+      "price": 10000,
+      "description": "Dedicated last-item concurrency fixture",
+      "active": true
+    }
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 201', function(){pm.response.to.have.status(201);});
+    const data=pm.response.json();
+    pm.test('Món test giá 10000, đang bán',function(){pm.expect(data.price).to.equal(10000);pm.expect(data.active).to.equal(true);});
+    if(pm.response.code===201)pm.environment.set('lastProductId',data.id);
+    if(pm.response.code>=400){pm.execution.setNextRequest(null);}
+    })();
+  language: text/javascript
+order: 3000

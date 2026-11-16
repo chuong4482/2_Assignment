@@ -1,0 +1,18 @@
+$kind: http-request
+name: 03 — Kho không âm và đã hết đúng 1 ly
+url: '{{baseUrl}}/admin/ingredients/{{lastIngredientId}}'
+method: GET
+auth:
+  type: noauth
+headers:
+  Authorization: Bearer {{lastAdminToken}}
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 200', function(){pm.response.to.have.status(200);});
+    const data=pm.response.json();
+    pm.test('Kho bằng 0, không bán vượt tồn',function(){pm.expect(data.quantity).to.equal(0);});
+    })();
+  language: text/javascript
+order: 3000

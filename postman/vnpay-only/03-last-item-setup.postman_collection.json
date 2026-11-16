@@ -1,0 +1,504 @@
+{
+  "info": {
+    "name": "BrewLite — 03A — Hai tài khoản tranh ly cuối: chuẩn bị",
+    "description": "Chỉ chạy trên DB test/local. Tạo nguyên liệu và món test riêng đủ 1 ly M, hai CUSTOMER, hai Order PENDING bằng request song song và hai URL VNPay. Không thay kho/menu của sản phẩm có sẵn. Sau run, mở lastPaymentUrlA và lastPaymentUrlB ở hai tab, hoàn tất cả hai trên VNPay Sandbox trước hạn 15 phút. Không có callback giả.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 — Khởi tạo bài test và đăng nhập quản lý",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/login",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "if(!pm.environment.get('adminEmail') || !pm.environment.get('adminPassword'))throw new Error('Điền adminEmail/adminPassword trong environment trước.');",
+              "const run=Date.now()+'-'+pm.variables.replaceIn('{{$randomUUID}}');",
+              "pm.environment.set('lastRunId',run);",
+              "pm.environment.set('lastBuyerAEmail','last-a-'+run+'@example.test');",
+              "pm.environment.set('lastBuyerBEmail','last-b-'+run+'@example.test');",
+              "['lastAdminToken','lastIngredientId','lastProductId','lastTokenA','lastTokenB','lastUserA','lastUserB','lastOrderA','lastOrderB','lastPaymentUrlA','lastPaymentUrlB','lastResultA','lastResultB'].forEach(function(key){pm.environment.unset(key);});",
+              "})();"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 201', function(){pm.response.to.have.status(201);});",
+              "const data=pm.response.json();",
+              "pm.test('Có quyền tạo sản phẩm và kho',function(){pm.expect(data.user.role).to.be.oneOf(['ADMIN','MANAGER']);pm.expect(data.accessToken).to.be.a('string').and.not.empty;});",
+              "if(pm.response.code===201)pm.environment.set('lastAdminToken',data.accessToken);",
+              "if(pm.response.code>=400){pm.execution.setNextRequest(null);}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — Tạo nguyên liệu test riêng, chỉ đủ 1 ly",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/admin/ingredients",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastAdminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"LAST-CUP-{{lastRunId}}\",\n  \"unit\": \"ly\",\n  \"quantity\": 1,\n  \"lowStockThreshold\": 0,\n  \"costPrice\": 0\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 201', function(){pm.response.to.have.status(201);});",
+              "const data=pm.response.json();",
+              "pm.test('Tồn kho đúng 1 đơn vị',function(){pm.expect(data.quantity).to.equal(1);});",
+              "if(pm.response.code===201)pm.environment.set('lastIngredientId',data.id);",
+              "if(pm.response.code>=400){pm.execution.setNextRequest(null);}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Tạo món test riêng",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/admin/products",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastAdminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"LAST-CUP-{{lastRunId}}\",\n  \"category\": \"Postman Test\",\n  \"price\": 10000,\n  \"description\": \"Dedicated last-item concurrency fixture\",\n  \"active\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 201', function(){pm.response.to.have.status(201);});",
+              "const data=pm.response.json();",
+              "pm.test('Món test giá 10000, đang bán',function(){pm.expect(data.price).to.equal(10000);pm.expect(data.active).to.equal(true);});",
+              "if(pm.response.code===201)pm.environment.set('lastProductId',data.id);",
+              "if(pm.response.code>=400){pm.execution.setNextRequest(null);}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Mỗi ly size M dùng đúng 1 đơn vị test",
+      "request": {
+        "method": "PUT",
+        "url": "{{baseUrl}}/admin/recipes/product/{{lastProductId}}",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastAdminToken}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"ingredientId\": \"{{lastIngredientId}}\",\n      \"quantity\": 1\n    }\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function(){pm.response.to.have.status(200);});",
+              "const data=pm.response.json();",
+              "pm.test('Công thức chỉ dùng nguyên liệu test',function(){pm.expect(data.items).to.have.lengthOf(1);pm.expect(data.items[0].ingredientId).to.equal(pm.environment.get('lastIngredientId'));pm.expect(data.items[0].quantity).to.equal(1);});",
+              "if(pm.response.code>=400){pm.execution.setNextRequest(null);}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Kiểm tra kho trước mua",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/admin/ingredients/{{lastIngredientId}}",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastAdminToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function(){pm.response.to.have.status(200);});",
+              "const data=pm.response.json();",
+              "pm.test('Chỉ còn đúng một ly',function(){pm.expect(data.quantity).to.equal(1);});",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06A — Tạo tài khoản khách A",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/register",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{lastBuyerAEmail}}\",\n  \"password\": \"{{buyerAPassword}}\",\n  \"fullName\": \"Last Cup Customer A\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 201', function(){pm.response.to.have.status(201);});",
+              "const data=pm.response.json();",
+              "pm.test('Tài khoản A là CUSTOMER',function(){pm.expect(data.user.role).to.equal('CUSTOMER');});",
+              "if(pm.response.code===201){pm.environment.set('lastTokenA',data.accessToken);pm.environment.set('lastUserA',data.user.id);}",
+              "if(pm.response.code>=400){pm.execution.setNextRequest(null);}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06B — Tạo tài khoản khách B",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/auth/register",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "noauth"
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{lastBuyerBEmail}}\",\n  \"password\": \"{{buyerBPassword}}\",\n  \"fullName\": \"Last Cup Customer B\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 201', function(){pm.response.to.have.status(201);});",
+              "const data=pm.response.json();",
+              "pm.test('Tài khoản B là CUSTOMER',function(){pm.expect(data.user.role).to.equal('CUSTOMER');});",
+              "if(pm.response.code===201){pm.environment.set('lastTokenB',data.accessToken);pm.environment.set('lastUserB',data.user.id);}",
+              "if(pm.response.code>=400){pm.execution.setNextRequest(null);}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 — Gửi hai yêu cầu đặt đơn đồng thời",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/health",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function(){pm.response.to.have.status(200);});",
+              "const data=pm.response.json();",
+              "",
+              "const base=pm.environment.get('baseUrl');",
+              "const productId=pm.environment.get('lastProductId');",
+              "function create(label){",
+              " return new Promise(function(resolve,reject){",
+              "  pm.sendRequest({url:base+'/orders',method:'POST',header:{'Content-Type':'application/json',Authorization:'Bearer '+pm.environment.get('lastToken'+label)},body:{mode:'raw',raw:JSON.stringify({items:[{productId:productId,size:'M',toppings:[],qty:1}],paymentMethod:'VNPay'})}},function(err,res){",
+              "   pm.test('Tài khoản '+label+' tạo đơn được',function(){pm.expect(err).to.equal(null);pm.expect(res && res.code).to.equal(201);});",
+              "   if(err || !res || res.code!==201){reject(err || new Error('Cannot create order '+label));return;}",
+              "   const order=res.json();",
+              "   pm.test('Đơn '+label+' đúng chủ, PENDING, đúng số tiền',function(){pm.expect(order.userId).to.equal(pm.environment.get('lastUser'+label));pm.expect(order.status).to.equal('PENDING');pm.expect(order.total).to.equal(15000);});",
+              "   pm.environment.set('lastOrder'+label,order.id);",
+              "   resolve(order);",
+              "  });",
+              " });",
+              "}",
+              "Promise.all([create('A'),create('B')]).then(function(orders){",
+              " pm.test('Hai tài khoản và hai đơn khác nhau',function(){pm.expect(orders[0].id).not.to.equal(orders[1].id);pm.expect(orders[0].userId).not.to.equal(orders[1].userId);});",
+              "},function(err){pm.test('Tạo hai đơn đồng thời hoàn tất',function(){throw err;});pm.execution.setNextRequest(null);});",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 — Hai đơn PENDING chưa làm giảm kho",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/admin/ingredients/{{lastIngredientId}}",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastAdminToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function(){pm.response.to.have.status(200);});",
+              "const data=pm.response.json();",
+              "pm.test('Kho vẫn 1 vì chỉ trừ khi PAID',function(){pm.expect(data.quantity).to.equal(1);});",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09A — Lấy URL VNPay của khách A",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/payments/vnpay/create",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastTokenA}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{lastOrderA}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 201', function(){pm.response.to.have.status(201);});",
+              "const data=pm.response.json();",
+              "pm.test('Có URL VNPay cho tài khoản A',function(){pm.expect(data.orderId).to.equal(pm.environment.get('lastOrderA'));pm.expect(data.paymentUrl.startsWith('https://sandbox.vnpayment.vn/')).to.equal(true);});",
+              "if(pm.response.code===201)pm.environment.set('lastPaymentUrlA',data.paymentUrl);",
+              "if(pm.response.code>=400){pm.execution.setNextRequest(null);}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "09B — Lấy URL VNPay của khách B",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/payments/vnpay/create",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastTokenB}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"orderId\": \"{{lastOrderB}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 201', function(){pm.response.to.have.status(201);});",
+              "const data=pm.response.json();",
+              "pm.test('Có URL VNPay cho tài khoản B',function(){pm.expect(data.orderId).to.equal(pm.environment.get('lastOrderB'));pm.expect(data.paymentUrl.startsWith('https://sandbox.vnpayment.vn/')).to.equal(true);});",
+              "if(pm.response.code===201)pm.environment.set('lastPaymentUrlB',data.paymentUrl);",
+              "if(pm.response.code>=400){pm.execution.setNextRequest(null);}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

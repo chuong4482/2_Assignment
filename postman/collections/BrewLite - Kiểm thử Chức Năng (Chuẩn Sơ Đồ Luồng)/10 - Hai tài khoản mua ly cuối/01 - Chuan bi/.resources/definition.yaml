@@ -1,0 +1,6 @@
+$kind: folder
+name: 01 - chuẩn bị
+description: Chỉ chạy trên DB test/local. Tạo nguyên liệu và món test riêng đủ 1 ly M, hai CUSTOMER, hai Order PENDING bằng
+  request song song và hai URL VNPay. Không thay kho/menu của sản phẩm có sẵn. Sau run, mở lastPaymentUrlA và lastPaymentUrlB
+  ở hai tab, hoàn tất cả hai trên VNPay Sandbox trước hạn 15 phút. Không có callback giả.
+order: 1000

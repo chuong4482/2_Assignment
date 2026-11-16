@@ -1,0 +1,16 @@
+# Use this workspace to collaborate
+workspace:
+  id: 64f0cc7c-f8e5-4e4c-8af7-76106cea570c
+
+# Each entry here maps a local resource to one or more corresponding objects in Postman Cloud
+
+cloudResources:
+  collections:
+    ../postman/collections/BrewLite - Kiểm thử Phi Chức Năng (Non-Functional Tests): a91e5e2b-4235-42bf-b0e7-9d7a2fbb0011
+    ../postman/collections/BrewLite - Kiểm thử Chức Năng (Chuẩn Sơ Đồ Luồng): b12e6f3c-5346-43cf-c1f8-0e8b3fcc1122
+
+# All resources in the `postman/` folder are automatically registered in Local View.
+# Point to additional files outside the `postman/` folder to register them individually. Example:
+#localResources:
+#  collections:
+#    - ../tests/E2E Test Collection/

@@ -1,0 +1,33 @@
+$kind: http-request
+name: 02 — Đọc đơn khách B và so sánh kết quả
+url: '{{baseUrl}}/orders/{{lastOrderB}}'
+method: GET
+auth:
+  type: noauth
+headers:
+  Authorization: Bearer {{lastTokenB}}
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 200', function(){pm.response.to.have.status(200);});
+    const data=pm.response.json();
+
+    const a=JSON.parse(pm.environment.get('lastResultA'));
+    const b=data;
+    const results=[a,b];
+    const paidStates=['PAID','PREPARING','READY','COMPLETED'];
+    pm.test('Đúng hai chủ tài khoản và hai đơn test',function(){pm.expect(a.id).to.equal(pm.environment.get('lastOrderA'));pm.expect(b.id).to.equal(pm.environment.get('lastOrderB'));pm.expect(a.userId).to.equal(pm.environment.get('lastUserA'));pm.expect(b.userId).to.equal(pm.environment.get('lastUserB'));});
+    pm.test('Chỉ một đơn mua thành công ly cuối',function(){
+     const paid=results.filter(function(o){return paidStates.includes(o.status)&&o.payment?.status==='SUCCESS';});
+     pm.expect(paid).to.have.lengthOf(1);
+    });
+    pm.test('Đơn còn lại CANCELLED và REFUND_PENDING sau khi cả hai thanh toán',function(){
+     const rejected=results.filter(function(o){return o.status==='CANCELLED'&&o.payment?.status==='REFUND_PENDING';});
+     pm.expect(rejected).to.have.lengthOf(1);
+    });
+    pm.test('Cả hai kết quả thuộc VNPay, đúng số tiền',function(){results.forEach(function(o){pm.expect(o.payment?.method).to.equal('VNPay');pm.expect(o.payment?.provider).to.equal('VNPAY');pm.expect(o.payment?.amount).to.equal(15000);});});
+    if(results.some(function(o){return o.status==='PENDING'||o.status==='PAYMENT_FAILED';}))pm.execution.setNextRequest(null);
+    })();
+  language: text/javascript
+order: 2000

@@ -1,0 +1,89 @@
+name: Delivery
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: production
+  cancel-in-progress: false
+jobs:
+  quality:
+    uses: ./.github/workflows/ci.yml
+  publish:
+    needs: quality
+    if: vars.ENABLE_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.image.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: image
+        run: |
+          echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+          echo "tag=$GITHUB_SHA" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile
+          push: true
+          tags: ghcr.io/${{ steps.image.outputs.owner }}/brewlite-api:${{ steps.image.outputs.tag }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: ghcr.io/${{ steps.image.outputs.owner }}/brewlite-web:${{ steps.image.outputs.tag }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.PUBLIC_API_URL }}
+  deploy:
+    needs: publish
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+      DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+      DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+      DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+      IMAGE_TAG: ${{ needs.publish.outputs.tag }}
+      PUBLIC_API_URL: ${{ vars.PUBLIC_API_URL }}
+      PUBLIC_WEB_URL: ${{ vars.PUBLIC_WEB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure SSH and copy deployment files
+        run: |
+          test -n "$DEPLOY_HOST" && test -n "$DEPLOY_USER"
+          test -n "$DEPLOY_SSH_KEY" && test -n "$DEPLOY_KNOWN_HOSTS"
+          test -n "$PUBLIC_API_URL" && test -n "$PUBLIC_WEB_URL"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh "$DEPLOY_USER@$DEPLOY_HOST" 'mkdir -p ~/brewlite/scripts'
+          scp docker-compose.prod.yml "$DEPLOY_USER@$DEPLOY_HOST:brewlite/"
+          scp scripts/deploy.sh scripts/rollback.sh "$DEPLOY_USER@$DEPLOY_HOST:brewlite/scripts/"
+      - name: Deploy, smoke test, rollback on failure
+        run: |
+          # IMAGE_TAG is a commit SHA intentionally passed from this runner.
+          # shellcheck disable=SC2029
+          if ssh "$DEPLOY_USER@$DEPLOY_HOST" "cd ~/brewlite && sh scripts/deploy.sh '$IMAGE_TAG'" &&
+             curl --fail --retry 10 --retry-delay 3 --retry-all-errors "$PUBLIC_API_URL/health/ready" &&
+             curl --fail --retry 5 --retry-delay 3 --retry-all-errors "$PUBLIC_WEB_URL"; then
+            echo 'Deployment and smoke tests passed'
+          else
+            if ssh "$DEPLOY_USER@$DEPLOY_HOST" 'cd ~/brewlite && sh scripts/rollback.sh'; then
+              curl --fail --retry 5 --retry-delay 3 --retry-all-errors "$PUBLIC_API_URL/health/ready" || echo 'ROLLBACK HEALTH CHECK FAILED'
+            else
+              echo 'ROLLBACK FAILED: inspect production before retrying'
+            fi
+            exit 1
+          fi

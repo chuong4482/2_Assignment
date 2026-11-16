@@ -1,0 +1,27 @@
+$kind: http-request
+name: "Bước 4: [Sơ đồ: Đăng nhập nếu chưa] Đăng nhập nhận JWT Token (POST /auth/login)"
+url: "{{base_url}}/auth/login"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "email": "{{user_email}}",
+        "password": "MatKhau123!"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("[4. Đăng nhập] Đăng nhập thành công trả về 200/201", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+      });
+
+      pm.test("[4. Đăng nhập] Cấp phát Token JWT hợp lệ", function () {
+          var res = pm.response.json();
+          pm.expect(res).to.have.property('accessToken');
+          pm.collectionVariables.set("jwt_token", res.accessToken);
+      });
+    language: text/javascript
+order: 4000

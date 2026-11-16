@@ -1,0 +1,14 @@
+$kind: http-request
+name: "NFR-03: Bảo mật - Chặn khi JWT Token sai hoặc giả mạo (GET /orders/me)"
+url: http://localhost:4000/orders/me
+method: GET
+headers:
+  Authorization: Bearer jwt_gia_mao_token_khong_hop_le
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("[NFR-03] JWT giả mạo phải bị từ chối 401 Unauthorized", function () {
+          pm.response.to.have.status(401);
+      });
+    language: text/javascript
+order: 3000

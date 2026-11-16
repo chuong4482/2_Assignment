@@ -1,0 +1,38 @@
+$kind: http-request
+name: 01 — Khởi tạo bài test và đăng nhập quản lý
+url: '{{baseUrl}}/auth/login'
+method: POST
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "{{adminEmail}}",
+      "password": "{{adminPassword}}"
+    }
+scripts:
+- type: beforeRequest
+  code: |-
+    (function () {
+    if(!pm.environment.get('adminEmail') || !pm.environment.get('adminPassword'))throw new Error('Điền adminEmail/adminPassword trong environment trước.');
+    const run=Date.now()+'-'+pm.variables.replaceIn('{{$randomUUID}}');
+    pm.environment.set('lastRunId',run);
+    pm.environment.set('lastBuyerAEmail','last-a-'+run+'@example.test');
+    pm.environment.set('lastBuyerBEmail','last-b-'+run+'@example.test');
+    ['lastAdminToken','lastIngredientId','lastProductId','lastTokenA','lastTokenB','lastUserA','lastUserB','lastOrderA','lastOrderB','lastPaymentUrlA','lastPaymentUrlB','lastResultA','lastResultB'].forEach(function(key){pm.environment.unset(key);});
+    })();
+  language: text/javascript
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 201', function(){pm.response.to.have.status(201);});
+    const data=pm.response.json();
+    pm.test('Có quyền tạo sản phẩm và kho',function(){pm.expect(data.user.role).to.be.oneOf(['ADMIN','MANAGER']);pm.expect(data.accessToken).to.be.a('string').and.not.empty;});
+    if(pm.response.code===201)pm.environment.set('lastAdminToken',data.accessToken);
+    if(pm.response.code>=400){pm.execution.setNextRequest(null);}
+    })();
+  language: text/javascript
+order: 1000

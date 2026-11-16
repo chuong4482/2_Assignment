@@ -1,0 +1,33 @@
+$kind: http-request
+name: 07 — Gửi hai yêu cầu đặt đơn đồng thời
+url: '{{baseUrl}}/health'
+method: GET
+auth:
+  type: noauth
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 200', function(){pm.response.to.have.status(200);});
+    const data=pm.response.json();
+
+    const base=pm.environment.get('baseUrl');
+    const productId=pm.environment.get('lastProductId');
+    function create(label){
+     return new Promise(function(resolve,reject){
+      pm.sendRequest({url:base+'/orders',method:'POST',header:{'Content-Type':'application/json',Authorization:'Bearer '+pm.environment.get('lastToken'+label)},body:{mode:'raw',raw:JSON.stringify({items:[{productId:productId,size:'M',toppings:[],qty:1}],paymentMethod:'VNPay'})}},function(err,res){
+       pm.test('Tài khoản '+label+' tạo đơn được',function(){pm.expect(err).to.equal(null);pm.expect(res && res.code).to.equal(201);});
+       if(err || !res || res.code!==201){reject(err || new Error('Cannot create order '+label));return;}
+       const order=res.json();
+       pm.test('Đơn '+label+' đúng chủ, PENDING, đúng số tiền',function(){pm.expect(order.userId).to.equal(pm.environment.get('lastUser'+label));pm.expect(order.status).to.equal('PENDING');pm.expect(order.total).to.equal(15000);});
+       pm.environment.set('lastOrder'+label,order.id);
+       resolve(order);
+      });
+     });
+    }
+    Promise.all([create('A'),create('B')]).then(function(orders){
+     pm.test('Hai tài khoản và hai đơn khác nhau',function(){pm.expect(orders[0].id).not.to.equal(orders[1].id);pm.expect(orders[0].userId).not.to.equal(orders[1].userId);});
+    },function(err){pm.test('Tạo hai đơn đồng thời hoàn tất',function(){throw err;});pm.execution.setNextRequest(null);});
+    })();
+  language: text/javascript
+order: 8000

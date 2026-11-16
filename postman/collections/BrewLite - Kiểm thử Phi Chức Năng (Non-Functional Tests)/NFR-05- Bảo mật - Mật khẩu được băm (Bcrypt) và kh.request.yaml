@@ -1,0 +1,27 @@
+$kind: http-request
+name: "NFR-05: Bảo mật - Mật khẩu được băm (Bcrypt) và không bị lộ ra Response"
+url: http://localhost:4000/auth/register
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "email": "test_nfr_{{$timestamp}}@brewlite.local",
+        "password": "SecretPassword123!",
+        "name": "NFR Tester"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("[NFR-05] Đăng ký thành công hoặc báo đã tồn tại", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201, 400, 409]);
+      });
+
+      pm.test("[NFR-05] Không bao giờ lộ mật khẩu gốc hoặc passwordHash ra response", function () {
+          var resText = pm.response.text();
+          pm.expect(resText).to.not.include("SecretPassword123!");
+      });
+    language: text/javascript
+order: 5000

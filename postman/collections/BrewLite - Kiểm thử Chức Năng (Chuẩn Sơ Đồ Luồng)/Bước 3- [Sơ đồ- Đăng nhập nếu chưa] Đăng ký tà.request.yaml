@@ -1,0 +1,31 @@
+$kind: http-request
+name: "Bước 3: [Sơ đồ: Đăng nhập nếu chưa] Đăng ký tài khoản (POST /auth/register)"
+url: "{{base_url}}/auth/register"
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "email": "{{user_email}}",
+        "password": "MatKhau123!",
+        "fullName": "Khách Hàng Test",
+        "phone": "0987654321"
+    }
+scripts:
+  - type: beforeRequest
+    code: |-
+      var randomEmail = 'khachhang_' + Date.now() + '@brewlite.local';
+      pm.collectionVariables.set("user_email", randomEmail);
+    language: text/javascript
+  - type: afterResponse
+    code: |-
+      pm.test("[3. Đăng ký] Đăng ký tài khoản thành công", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+          var res = pm.response.json();
+          var createdEmail = res.user ? res.user.email : res.email;
+          pm.expect(createdEmail.toLowerCase()).to.eql(pm.collectionVariables.get("user_email").toLowerCase());
+      });
+    language: text/javascript
+order: 3000

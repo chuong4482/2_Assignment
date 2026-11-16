@@ -1,0 +1,6 @@
+$kind: folder
+name: 02 - kiểm tra
+description: Chạy với cùng environment sau khi cả hai phiên VNPay đã hoàn tất và callback xử lý. Kỳ vọng đúng một PAID/SUCCESS,
+  một CANCELLED/REFUND_PENDING, tồn kho bằng 0 và đơn thứ ba bị 409. Không chạy lại chuẩn bị vì sẽ đổi fixture và ID. Đây
+  là kiểm kết quả cạnh tranh tồn kho, không chứng minh hai ngân hàng xử lý cùng một thời điểm.
+order: 2000

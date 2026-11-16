@@ -1,0 +1,214 @@
+{
+  "info": {
+    "name": "BrewLite Assignment 1 — 02 Sau thanh toán VNPay Sandbox",
+    "description": "CHỈ CHẠY SAU KHI THANH TOÁN TRÊN VNPAY SANDBOX. Dùng nguyên environment đã chạy collection 01: accessToken và orderId của tài khoản vừa tạo. Collection này không tạo tài khoản/đơn mới và không giả callback. Nếu đơn vẫn PENDING, test đầu sẽ đỏ đúng thực tế.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 — Xác minh đơn thực sự PAID từ backend",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/orders/{{orderId}}",
+        "description": "01 — Xác minh đơn thực sự PAID từ backend"
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "['accessToken', 'orderId', 'userId', 'orderTotal'].forEach(function (key) { if (!pm.environment.get(key)) throw new Error('Thiếu ' + key + ': chạy collection 01 trước.'); });",
+              "pm.environment.unset('paymentId');",
+              "pm.environment.unset('pointsBefore');",
+              "})();"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test('Đúng đơn, đúng chủ, trạng thái đã thanh toán', function () {",
+              "  pm.expect(data.id).to.equal(pm.environment.get('orderId'));",
+              "  pm.expect(data.userId).to.equal(pm.environment.get('userId'));",
+              "  pm.expect(data.status).to.be.oneOf(['PAID', 'PREPARING', 'READY', 'COMPLETED']);",
+              "  pm.expect(data.payment.status).to.equal('SUCCESS');",
+              "  pm.expect(data.payment.method).to.equal('VNPay');",
+              "  pm.expect(data.payment.provider).to.equal('VNPAY');",
+              "  pm.expect(data.payment.amount).to.equal(Number(pm.environment.get('orderTotal')));",
+              "});",
+              "if (data.payment?.status === 'SUCCESS' && ['PAID', 'PREPARING', 'READY', 'COMPLETED'].includes(data.status)) {",
+              "  pm.environment.set('paymentId', data.payment.id);",
+              "} else {",
+              "  pm.execution.setNextRequest(null);",
+              "}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — Lưu điểm trước khi thử thanh toán lặp",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/auth/profile",
+        "description": "02 — Lưu điểm trước khi thử thanh toán lặp"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test('Điểm là số không âm', function () { pm.expect(data.user.loyaltyPoints).to.be.a('number').and.at.least(0); });",
+              "if (pm.response.code === 200) pm.environment.set('pointsBefore', data.user.loyaltyPoints);",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Đơn đã trả tiền không được thanh toán lại",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{baseUrl}}/orders/{{orderId}}/retry-payment",
+        "description": "03 — Đơn đã trả tiền không được thanh toán lại",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"method\": \"VNPay\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 409', function () { pm.response.to.have.status(409); });",
+              "const data = pm.response.json();",
+              "pm.test('Có thông báo lỗi', function () { pm.expect(data.message).to.exist; });",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Không tạo thêm Payment sau retry",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/orders/{{orderId}}",
+        "description": "04 — Không tạo thêm Payment sau retry"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test('Giữ nguyên Payment và số tiền', function () {",
+              "  pm.expect(pm.environment.get('paymentId')).to.be.a('string').and.not.empty;",
+              "  pm.expect(data.payment.id).to.equal(pm.environment.get('paymentId'));",
+              "  pm.expect(data.payment.status).to.equal('SUCCESS');",
+              "  pm.expect(data.total).to.equal(Number(pm.environment.get('orderTotal')));",
+              "});",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Không cộng điểm thêm khi retry bị từ chối",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/auth/profile",
+        "description": "05 — Không cộng điểm thêm khi retry bị từ chối"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test('Điểm không tăng lần hai', function () { pm.expect(data.user.loyaltyPoints).to.equal(Number(pm.environment.get('pointsBefore'))); });",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 — Lịch sử chứa đơn đã thanh toán đúng một lần",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/orders/me",
+        "description": "06 — Lịch sử chứa đơn đã thanh toán đúng một lần"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function () { pm.response.to.have.status(200); });",
+              "const data = pm.response.json();",
+              "pm.test('Có đúng một đơn với orderId đang kiểm tra', function () {",
+              "  pm.expect(data).to.be.an('array');",
+              "  const matches = data.filter(function (o) { return o.id === pm.environment.get('orderId'); });",
+              "  pm.expect(matches).to.have.lengthOf(1);",
+              "  pm.expect(matches[0].payment.status).to.equal('SUCCESS');",
+              "});",
+              "})();"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

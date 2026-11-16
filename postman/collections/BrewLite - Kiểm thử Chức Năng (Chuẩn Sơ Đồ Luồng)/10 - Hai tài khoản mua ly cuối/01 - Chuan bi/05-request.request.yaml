@@ -1,0 +1,18 @@
+$kind: http-request
+name: 05 — Kiểm tra kho trước mua
+url: '{{baseUrl}}/admin/ingredients/{{lastIngredientId}}'
+method: GET
+auth:
+  type: noauth
+headers:
+  Authorization: Bearer {{lastAdminToken}}
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 200', function(){pm.response.to.have.status(200);});
+    const data=pm.response.json();
+    pm.test('Chỉ còn đúng một ly',function(){pm.expect(data.quantity).to.equal(1);});
+    })();
+  language: text/javascript
+order: 5000

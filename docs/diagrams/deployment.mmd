@@ -1,0 +1,21 @@
+﻿flowchart LR
+ subgraph Local
+ D[Developer] --> L[Local Compose web API database]
+ end
+ subgraph CI[CI - actual runs pending]
+ G[PR lint test build] --> I[SHA-tagged Docker images] --> R[GHCR registry]
+ end
+ subgraph Production[Candidate VPS - actual provider and URLs pending]
+ T[HTTPS reverse proxy - config pending] --> W[Next.js loopback 3000]
+ T --> A[NestJS loopback 4000]
+ A --> B[(Internal PostgreSQL 5432)] --> V[(Persistent volume)]
+ S[Environment secrets] -. inject .-> A
+ A --> H[Health and readiness]
+ A --> O[Stdout logs]
+ end
+ C[Customer browser or PWA] -->|HTTPS| T
+ R -->|Immutable pull| W
+ R -->|Immutable pull| A
+ A -->|HTTPS signed request| P[VNPay Sandbox]
+ P -->|HTTPS signed return and IPN| T
+ D -->|Push or PR| G

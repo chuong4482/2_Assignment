@@ -1,0 +1,40 @@
+sequenceDiagram
+ actor Customer
+ participant UI as Next.js UI
+ participant API as NestJS API
+ participant DB as PostgreSQL
+ participant Pay as VNPay Sandbox
+ Customer->>UI: Choose options and checkout
+ UI->>API: POST /orders with JWT
+ API->>API: Validate JWT DTO options and price
+ API->>DB: Transaction create PENDING order and snapshots
+ DB-->>API: Order id and total
+ API-->>UI: PENDING order
+ alt Current browser checkout
+ UI->>API: POST /orders/:id/retry-payment with JWT
+ else Optional idempotent API client
+ UI->>API: POST /payments with JWT and Idempotency-Key
+ API->>DB: Lock order and create or reuse unique payment intent
+ DB-->>API: Same intent and URL for repeated key
+ end
+ API->>API: Verify ownership and sign request
+ API-->>UI: Signed Sandbox URL
+ UI->>Pay: Browser redirect and authentication
+ Pay->>API: Signed return or IPN
+ API->>API: Verify signature amount and state
+ alt Success
+ API->>DB: Transaction duplicate check and inventory version CAS
+ API->>DB: PAID payment and loyalty once
+ DB-->>API: Commit
+ else Failure
+ API->>DB: PAYMENT_FAILED without stock deduction
+ else Duplicate
+ API->>DB: Read settled payment without repeated effects
+ end
+ API-->>Pay: Provider acknowledgement
+ UI->>API: GET /orders/me with JWT
+ API->>DB: Owner-filtered history
+ DB-->>API: Current state
+ API-->>UI: Server-confirmed result
+ UI-->>Customer: Confirmation or retry
+ Note over API,DB: Local integration verifies six concurrent same-key requests reuse one payment.

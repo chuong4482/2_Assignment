@@ -1,0 +1,29 @@
+$kind: http-request
+name: 09B — Lấy URL VNPay của khách B
+url: '{{baseUrl}}/payments/vnpay/create'
+method: POST
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{lastTokenB}}
+body:
+  type: text
+  content: |-
+    {
+      "orderId": "{{lastOrderB}}"
+    }
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 201', function(){pm.response.to.have.status(201);});
+    const data=pm.response.json();
+    pm.test('Có URL VNPay cho tài khoản B',function(){pm.expect(data.orderId).to.equal(pm.environment.get('lastOrderB'));pm.expect(data.paymentUrl.startsWith('https://sandbox.vnpayment.vn/')).to.equal(true);});
+    if(pm.response.code===201)pm.environment.set('lastPaymentUrlB',data.paymentUrl);
+    if(pm.response.code>=400){pm.execution.setNextRequest(null);}
+    })();
+    // Pause here: complete both VNPay Sandbox sessions before running verification.
+    pm.execution.setNextRequest(null);
+  language: text/javascript
+order: 11000

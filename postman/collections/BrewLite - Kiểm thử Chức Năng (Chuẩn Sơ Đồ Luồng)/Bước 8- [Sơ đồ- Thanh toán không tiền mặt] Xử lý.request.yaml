@@ -1,0 +1,24 @@
+$kind: http-request
+name: "Bước 8: [Sơ đồ: Thanh toán không tiền mặt] Xử lý thanh toán Ví điện tử (POST /orders/:id/retry-payment)"
+url: "{{base_url}}/orders/{{order_id}}/retry-payment"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{jwt_token}}
+body:
+  type: text
+  content: |-
+    {
+        "method": "Ví điện tử"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("[8. Thanh toán] Thanh toán thành công, đơn chuyển trạng thái PAID", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+          var res = pm.response.json();
+          pm.expect(res.success).to.be.true;
+          pm.expect(res.order.status).to.be.oneOf(['PAID', 'PREPARING']);
+      });
+    language: text/javascript
+order: 8000

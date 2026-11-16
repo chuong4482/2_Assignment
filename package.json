@@ -1,0 +1,40 @@
+{
+  "name": "brewlite-assignment-1",
+  "private": true,
+  "workspaces": [
+    "apps/web",
+    "apps/api"
+  ],
+  "scripts": {
+    "dev:web": "npm run dev -w apps/web",
+    "dev:api": "npm run start:dev -w apps/api",
+    "build": "npm run build -w apps/api && npm run build -w apps/web",
+    "db:generate": "npm run db:generate -w apps/api",
+    "db:deploy": "npm run db:deploy -w apps/api",
+    "db:seed": "npm run db:seed -w apps/api",
+    "db:migrate": "npm run db:migrate -w apps/api",
+    "prisma:generate": "npm run db:generate -w apps/api",
+    "prisma:migrate:deploy": "npm run db:deploy -w apps/api",
+    "test": "npm test -w apps/api",
+    "test:api": "npm test -w apps/api",
+    "test:nfr": "node postman/run_nfr_tests.js all",
+    "test:nfr:speed": "node postman/run_nfr_tests.js speed",
+    "test:nfr:jwt": "node postman/run_nfr_tests.js jwt",
+    "test:nfr:validation": "node postman/run_nfr_tests.js validation",
+    "test:nfr:bcrypt": "node postman/run_nfr_tests.js bcrypt",
+    "test:functional": "npm run test:integration",
+    "test:ai": "npm run test:integration",
+    "test:integration": "node --test tests/integration/*.test.cjs",
+    "test:e2e": "playwright test --config tests/playwright.config.cjs",
+    "test:all": "npm test && npm run test:integration && npm run test:e2e",
+    "dev": "concurrently \"npm run dev:api\" \"npm run dev:web\"",
+    "lint": "eslint apps tests",
+    "test:setup": "node tests/run-with-test-env.cjs run db:deploy && node tests/run-with-test-env.cjs run db:seed"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@typescript-eslint/parser": "^8.72.2",
+    "concurrently": "^9.1.2",
+    "eslint": "^9.39.5"
+  }
+}

@@ -1,0 +1,28 @@
+$kind: http-request
+name: 06B — Tạo tài khoản khách B
+url: '{{baseUrl}}/auth/register'
+method: POST
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+      "email": "{{lastBuyerBEmail}}",
+      "password": "{{buyerBPassword}}",
+      "fullName": "Last Cup Customer B"
+    }
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 201', function(){pm.response.to.have.status(201);});
+    const data=pm.response.json();
+    pm.test('Tài khoản B là CUSTOMER',function(){pm.expect(data.user.role).to.equal('CUSTOMER');});
+    if(pm.response.code===201){pm.environment.set('lastTokenB',data.accessToken);pm.environment.set('lastUserB',data.user.id);}
+    if(pm.response.code>=400){pm.execution.setNextRequest(null);}
+    })();
+  language: text/javascript
+order: 7000

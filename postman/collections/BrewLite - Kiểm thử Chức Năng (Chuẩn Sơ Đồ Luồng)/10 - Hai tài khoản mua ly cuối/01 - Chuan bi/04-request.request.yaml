@@ -1,0 +1,31 @@
+$kind: http-request
+name: 04 — Mỗi ly size M dùng đúng 1 đơn vị test
+url: '{{baseUrl}}/admin/recipes/product/{{lastProductId}}'
+method: PUT
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{lastAdminToken}}
+body:
+  type: text
+  content: |-
+    {
+      "items": [
+        {
+          "ingredientId": "{{lastIngredientId}}",
+          "quantity": 1
+        }
+      ]
+    }
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 200', function(){pm.response.to.have.status(200);});
+    const data=pm.response.json();
+    pm.test('Công thức chỉ dùng nguyên liệu test',function(){pm.expect(data.items).to.have.lengthOf(1);pm.expect(data.items[0].ingredientId).to.equal(pm.environment.get('lastIngredientId'));pm.expect(data.items[0].quantity).to.equal(1);});
+    if(pm.response.code>=400){pm.execution.setNextRequest(null);}
+    })();
+  language: text/javascript
+order: 4000

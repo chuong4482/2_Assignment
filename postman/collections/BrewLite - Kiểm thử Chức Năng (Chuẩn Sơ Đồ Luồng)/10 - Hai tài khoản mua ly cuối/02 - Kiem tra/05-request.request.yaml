@@ -1,0 +1,33 @@
+$kind: http-request
+name: 05 — Tạo thêm đơn bị từ chối vì hết kho
+url: '{{baseUrl}}/orders'
+method: POST
+auth:
+  type: noauth
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{lastTokenA}}
+body:
+  type: text
+  content: |-
+    {
+      "items": [
+        {
+          "productId": "{{lastProductId}}",
+          "size": "M",
+          "toppings": [],
+          "qty": 1
+        }
+      ],
+      "paymentMethod": "VNPay"
+    }
+scripts:
+- type: afterResponse
+  code: |-
+    (function () {
+    pm.test('HTTP 409', function(){pm.response.to.have.status(409);});
+    const data=pm.response.json();
+    pm.test('Có thông báo hết nguyên liệu',function(){pm.expect(data.message).to.exist;});
+    })();
+  language: text/javascript
+order: 5000

@@ -1,0 +1,66 @@
+﻿classDiagram
+ class User {
+ String id
+ String email
+ String passwordHash
+ Int loyaltyPoints
+ }
+ class Product {
+ String id
+ String name
+ Int price
+ String imageUrl
+ }
+ class Order {
+ String id
+ OrderStatus status
+ Int total
+ DateTime createdAt
+ }
+ class OrderItem {
+ String size
+ Int qty
+ Int lineTotal
+ }
+ class Payment {
+ String idempotencyKey
+ Int amount
+ String method
+ String transactionRef
+ }
+ class Promotion {
+ String code
+ Int percentOff
+ Int discountAmount
+ DateTime expiresAt
+ }
+ class LoyaltyTransaction {
+ Int points
+ String reason
+ }
+ class Ingredient {
+ Int quantity
+ Int version
+ }
+ class RecipeItem {
+ Int quantity
+ }
+ class OrderStatus {
+ <<enumeration>>
+ PENDING
+ PAID
+ PREPARING
+ READY
+ COMPLETED
+ PAYMENT_FAILED
+ CANCELLED
+ }
+ User "1" --> "0..*" Order
+ Order "1" *-- "1..*" OrderItem
+ Product "1" --> "0..*" OrderItem
+ Order "1" --> "0..1" Payment
+ Promotion "0..1" --> "0..*" Order
+ User "1" --> "0..*" LoyaltyTransaction
+ Product "1" --> "0..*" RecipeItem
+ Ingredient "1" --> "0..*" RecipeItem
+ Order --> OrderStatus

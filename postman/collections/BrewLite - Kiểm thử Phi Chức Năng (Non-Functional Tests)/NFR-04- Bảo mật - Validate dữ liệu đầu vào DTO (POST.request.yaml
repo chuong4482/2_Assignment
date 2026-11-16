@@ -1,0 +1,27 @@
+$kind: http-request
+name: "NFR-04: Bảo mật - Validate dữ liệu đầu vào DTO (POST /auth/register sai format)"
+url: http://localhost:4000/auth/register
+method: POST
+headers:
+  Content-Type: application/json
+body:
+  type: text
+  content: |-
+    {
+        "email": "khong-phai-dinh-dang-email",
+        "password": "123",
+        "name": ""
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("[NFR-04] Dữ liệu sai phải bị chặn bởi class-validator với mã 400 Bad Request", function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test("[NFR-04] Có thông báo lỗi validation chi tiết", function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.message).to.not.be.empty;
+      });
+    language: text/javascript
+order: 4000

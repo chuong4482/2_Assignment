@@ -1,0 +1,208 @@
+{
+  "info": {
+    "name": "BrewLite — 03B — Hai tài khoản tranh ly cuối: kiểm tra",
+    "description": "Chạy với cùng environment sau khi cả hai phiên VNPay đã hoàn tất và callback xử lý. Kỳ vọng đúng một PAID/SUCCESS, một CANCELLED/REFUND_PENDING, tồn kho bằng 0 và đơn thứ ba bị 409. Không chạy lại chuẩn bị vì sẽ đổi fixture và ID. Đây là kiểm kết quả cạnh tranh tồn kho, không chứng minh hai ngân hàng xử lý cùng một thời điểm.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 — Đọc đơn khách A",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/orders/{{lastOrderA}}",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastTokenA}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "['lastOrderA','lastOrderB','lastTokenA','lastTokenB','lastAdminToken','lastIngredientId'].forEach(function(key){if(!pm.environment.get(key))throw new Error('Chạy bước chuẩn bị trước: thiếu '+key);});pm.environment.unset('lastResultA');",
+              "})();"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function(){pm.response.to.have.status(200);});",
+              "const data=pm.response.json();",
+              "if(pm.response.code===200)pm.environment.set('lastResultA',JSON.stringify(data));",
+              "if(pm.response.code>=400){pm.execution.setNextRequest(null);}",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 — Đọc đơn khách B và so sánh kết quả",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/orders/{{lastOrderB}}",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastTokenB}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function(){pm.response.to.have.status(200);});",
+              "const data=pm.response.json();",
+              "",
+              "const a=JSON.parse(pm.environment.get('lastResultA'));",
+              "const b=data;",
+              "const results=[a,b];",
+              "const paidStates=['PAID','PREPARING','READY','COMPLETED'];",
+              "pm.test('Đúng hai chủ tài khoản và hai đơn test',function(){pm.expect(a.id).to.equal(pm.environment.get('lastOrderA'));pm.expect(b.id).to.equal(pm.environment.get('lastOrderB'));pm.expect(a.userId).to.equal(pm.environment.get('lastUserA'));pm.expect(b.userId).to.equal(pm.environment.get('lastUserB'));});",
+              "pm.test('Chỉ một đơn mua thành công ly cuối',function(){",
+              " const paid=results.filter(function(o){return paidStates.includes(o.status)&&o.payment?.status==='SUCCESS';});",
+              " pm.expect(paid).to.have.lengthOf(1);",
+              "});",
+              "pm.test('Đơn còn lại CANCELLED và REFUND_PENDING sau khi cả hai thanh toán',function(){",
+              " const rejected=results.filter(function(o){return o.status==='CANCELLED'&&o.payment?.status==='REFUND_PENDING';});",
+              " pm.expect(rejected).to.have.lengthOf(1);",
+              "});",
+              "pm.test('Cả hai kết quả thuộc VNPay, đúng số tiền',function(){results.forEach(function(o){pm.expect(o.payment?.method).to.equal('VNPay');pm.expect(o.payment?.provider).to.equal('VNPAY');pm.expect(o.payment?.amount).to.equal(15000);});});",
+              "if(results.some(function(o){return o.status==='PENDING'||o.status==='PAYMENT_FAILED';}))pm.execution.setNextRequest(null);",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 — Kho không âm và đã hết đúng 1 ly",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/admin/ingredients/{{lastIngredientId}}",
+        "header": [],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastAdminToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function(){pm.response.to.have.status(200);});",
+              "const data=pm.response.json();",
+              "pm.test('Kho bằng 0, không bán vượt tồn',function(){pm.expect(data.quantity).to.equal(0);});",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 — Món cuối đã hết hàng",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/products/{{lastProductId}}",
+        "header": [],
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 200', function(){pm.response.to.have.status(200);});",
+              "const data=pm.response.json();",
+              "pm.test('Món không còn khả dụng',function(){pm.expect(data.available).to.equal(false);pm.expect(data.stock).to.equal(0);});",
+              "})();"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 — Tạo thêm đơn bị từ chối vì hết kho",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/orders",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{lastTokenA}}",
+              "type": "string"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"{{lastProductId}}\",\n      \"size\": \"M\",\n      \"toppings\": [],\n      \"qty\": 1\n    }\n  ],\n  \"paymentMethod\": \"VNPay\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "(function () {",
+              "pm.test('HTTP 409', function(){pm.response.to.have.status(409);});",
+              "const data=pm.response.json();",
+              "pm.test('Có thông báo hết nguyên liệu',function(){pm.expect(data.message).to.exist;});",
+              "})();"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

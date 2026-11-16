@@ -1,0 +1,17 @@
+$kind: http-request
+name: "Bước 9: [Sơ đồ: Xác nhận đơn & Nhận đồ uống] Xem đơn hàng theo mã đơn (GET /orders/:id)"
+url: "{{base_url}}/orders/{{order_id}}"
+method: GET
+headers:
+  Authorization: Bearer {{jwt_token}}
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("[9. Xác nhận đơn] Hiển thị mã đơn và trạng thái PAID sẵn sàng pha chế", function () {
+          pm.response.to.have.status(200);
+          var order = pm.response.json();
+          pm.expect(order.id).to.eql(pm.collectionVariables.get("order_id"));
+          pm.expect(order.status).to.be.oneOf(['PAID', 'PREPARING']);
+      });
+    language: text/javascript
+order: 9000

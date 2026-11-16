@@ -1,0 +1,33 @@
+$kind: http-request
+name: "Bước 7: [Sơ đồ: Thanh toán không tiền mặt] Đặt đơn hàng (POST /orders)"
+url: "{{base_url}}/orders"
+method: POST
+headers:
+  Content-Type: application/json
+  Authorization: Bearer {{jwt_token}}
+body:
+  type: text
+  content: |-
+    {
+        "items": [
+            {
+                "productId": "{{product_id}}",
+                "size": "M",
+                "qty": 2,
+                "toppings": []
+            }
+        ],
+        "paymentMethod": "Ví điện tử"
+    }
+scripts:
+  - type: afterResponse
+    code: |-
+      pm.test("[7. Đặt hàng] Tạo đơn thành công với trạng thái PENDING", function () {
+          pm.expect(pm.response.code).to.be.oneOf([200, 201]);
+          var order = pm.response.json();
+          pm.expect(order).to.have.property('id');
+          pm.expect(order.status).to.eql('PENDING');
+          pm.collectionVariables.set("order_id", order.id);
+      });
+    language: text/javascript
+order: 7000

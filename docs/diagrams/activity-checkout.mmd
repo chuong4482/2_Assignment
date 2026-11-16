@@ -1,0 +1,33 @@
+﻿flowchart TD
+ subgraph Customer
+ S((Start)) --> M[Browse menu and options] --> C[Review cart]
+ C --> L{Logged in?}
+ L -->|No| A[Sign in]
+ A --> O[Confirm checkout]
+ L -->|Yes| O
+ end
+ subgraph API
+ O --> V[Validate JWT items and price]
+ V --> I{In stock?}
+ I -->|No| E[Show error]
+ E --> C
+ I -->|Yes| P[Transaction creates PENDING order]
+ end
+ subgraph VNPay
+ P --> U[Signed Sandbox redirect]
+ U --> B[Customer authenticates]
+ B --> Q[Signed callback]
+ end
+ subgraph Settlement
+ Q --> K{Valid signature and amount?}
+ K -->|No| R[Reject without settlement]
+ K -->|Yes| F{Payment succeeded?}
+ F -->|No| D[PAYMENT_FAILED; retain cart]
+ D --> Y{Retry?}
+ Y -->|Yes| P
+ Y -->|No| Z((End))
+ F -->|Yes| W[Transaction inventory CAS payment and loyalty once]
+ W --> N[Fetch status and show confirmation]
+ N --> Z
+ R --> Z
+ end
